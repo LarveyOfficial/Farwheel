@@ -5,7 +5,10 @@ import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockMo
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockStateWrapperCreatedEvent;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
 import com.seibel.distanthorizons.api.objects.render.DhApiModelQuad;
-import net.minecraft.core.registries.BuiltInRegistries;
+import dev.engine_room.flywheel.api.visualization.VisualizerRegistry;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.common.Mod;
@@ -21,7 +24,9 @@ public class Farwheel {
 			@Override
 			public void blockStateWrapperCreated(DhApiEventParam<EventParam> event) {
 				if (event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
-					&& BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).toString().equals("create:mechanical_press")) {
+					&& blockState.getBlock() instanceof EntityBlock entityBlock
+					&& entityBlock.newBlockEntity(BlockPos.ZERO, blockState) instanceof BlockEntity blockEntity
+					&& VisualizerRegistry.getVisualizer(blockEntity.getType()) != null) {
 					event.value.setAllowApiModelOverride(true);
 				}
 			}

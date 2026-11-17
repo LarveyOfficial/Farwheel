@@ -33,8 +33,13 @@ neoForge {
     }
 }
 
+repositories {
+    maven { url = 'https://maven.createmod.net' }
+}
+
 dependencies {
     compileOnly files('run/mods/DistantHorizons-3.4.0-RC2-1.21.1-fabric-neoforge.jar')
+    compileOnly 'dev.engine-room.flywheel:flywheel-neoforge-1.21.1:1.0.6-44'
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
