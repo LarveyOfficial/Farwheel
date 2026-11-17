@@ -33,6 +33,10 @@ neoForge {
     }
 }
 
+dependencies {
+    compileOnly files('run/mods/DistantHorizons-3.4.0-RC2-1.21.1-fabric-neoforge.jar')
+}
+
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [
             minecraft_version_range: minecraft_version_range,
