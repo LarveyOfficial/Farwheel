@@ -1,5 +1,6 @@
 package com.larvey.farwheel;
 
+import com.larvey.farwheel.copycats.CopycatsFixes;
 import com.larvey.farwheel.create.CreateFixes;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiDirection;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockModelOverrideEvent;
@@ -55,6 +56,10 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			blockEntity.setLevel(level);
 		}
 		ModelData modelData = blockEntity == null ? ModelData.EMPTY : blockEntity.getModelData();
+		// Copycats+ only finishes its model data with a level, like the game does
+		if (blockEntity != null && ModList.get().isLoaded("copycats") && CopycatsFixes.takesOver(blockState)) {
+			modelData = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState).getModelData(level, blockEntity.getBlockPos(), blockState, modelData);
+		}
 		VisualRecorder recorder = new VisualRecorder(blockState, blockEntity);
 
 		List<Quad> quads = new ArrayList<>();

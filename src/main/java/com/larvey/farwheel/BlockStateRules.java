@@ -1,5 +1,6 @@
 package com.larvey.farwheel;
 
+import com.larvey.farwheel.copycats.CopycatsFixes;
 import com.larvey.farwheel.create.CreateFixes;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiBlockMaterial;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockStateWrapperCreatedEvent;
@@ -35,6 +36,14 @@ public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
 			&& event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
 			&& CreateFixes.takesOver(blockState)) {
 			event.value.setAllowApiModelOverride(true);
+		}
+		// Copycats+ blocks
+		if (ModList.get().isLoaded("copycats")
+			&& event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
+			&& CopycatsFixes.takesOver(blockState)) {
+			event.value.setAllowApiModelOverride(true);
+			event.value.setAllowApiTextureOverride(true);
+			event.value.setAllowApiColorOverride(true);
 		}
 		// Invisible helper blocks, like the water wheel's structure blocks
 		if (event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState

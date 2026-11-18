@@ -1,15 +1,23 @@
 package com.larvey.farwheel.create;
 
 import com.larvey.farwheel.Quad;
+import com.larvey.farwheel.create.fixes.Bell;
 import com.larvey.farwheel.create.fixes.FluidPipe;
 import com.larvey.farwheel.create.fixes.FluidTank;
+import com.larvey.farwheel.create.fixes.HarvesterBlade;
 import com.larvey.farwheel.create.fixes.Roller;
 import com.larvey.farwheel.create.fixes.SawBlade;
 import com.larvey.farwheel.create.fixes.SlidingDoor;
+import com.larvey.farwheel.create.fixes.SpoutNozzle;
 import com.larvey.farwheel.create.fixes.SteamEngine;
+import com.larvey.farwheel.create.fixes.WhistleMouth;
+import com.simibubi.create.content.contraptions.actors.harvester.HarvesterBlock;
 import com.simibubi.create.content.contraptions.actors.roller.RollerBlock;
 import com.simibubi.create.content.decoration.slidingDoor.SlidingDoorBlock;
+import com.simibubi.create.content.decoration.steamWhistle.WhistleBlock;
+import com.simibubi.create.content.equipment.bell.AbstractBellBlock;
 import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
+import com.simibubi.create.content.fluids.spout.SpoutBlock;
 import com.simibubi.create.content.fluids.tank.FluidTankBlock;
 import com.simibubi.create.content.kinetics.saw.SawBlock;
 import com.simibubi.create.content.kinetics.steamEngine.SteamEngineBlock;
@@ -22,7 +30,15 @@ import net.minecraft.world.level.block.state.BlockState;
 public class CreateFixes {
 	/** Create blocks we take over even without a visual */
 	public static boolean takesOver(BlockState blockState) {
-		return blockState.getBlock() instanceof RollerBlock || blockState.getBlock() instanceof TrackBlock || blockState.getBlock() instanceof FluidTankBlock || blockState.getBlock() instanceof FluidPipeBlock || SlidingDoor.isOpen(blockState);
+		return blockState.getBlock() instanceof RollerBlock
+			|| blockState.getBlock() instanceof TrackBlock
+			|| blockState.getBlock() instanceof FluidTankBlock
+			|| blockState.getBlock() instanceof FluidPipeBlock
+			|| blockState.getBlock() instanceof HarvesterBlock
+			|| blockState.getBlock() instanceof WhistleBlock
+			|| blockState.getBlock() instanceof SpoutBlock
+			|| blockState.getBlock() instanceof AbstractBellBlock
+			|| SlidingDoor.isOpen(blockState);
 	}
 
 	/** Adds the parts Create draws outside Flywheel */
@@ -41,6 +57,18 @@ public class CreateFixes {
 		}
 		if (blockState.getBlock() instanceof FluidPipeBlock) {
 			FluidPipe.add(instancerProvider, blockState);
+		}
+		if (blockState.getBlock() instanceof HarvesterBlock) {
+			HarvesterBlade.add(instancerProvider, blockState);
+		}
+		if (blockState.getBlock() instanceof WhistleBlock) {
+			WhistleMouth.add(instancerProvider, blockState);
+		}
+		if (blockState.getBlock() instanceof SpoutBlock) {
+			SpoutNozzle.add(instancerProvider);
+		}
+		if (blockState.getBlock() instanceof AbstractBellBlock) {
+			Bell.add(instancerProvider, blockState);
 		}
 	}
 

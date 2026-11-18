@@ -41,6 +41,7 @@ dependencies {
     compileOnly files('run/mods/DistantHorizons-3.4.0-RC2-1.21.1-fabric-neoforge.jar')
     compileOnly 'dev.engine-room.flywheel:flywheel-neoforge-1.21.1:1.0.4'
     compileOnly 'com.simibubi.create:create-1.21.1:6.0.10-281:slim'
+    compileOnly files('run/mods/copycats-3.0.11+mc.1.21.1-neoforge.jar')
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
