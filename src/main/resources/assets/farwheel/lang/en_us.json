@@ -1,3 +1,4 @@
 {
-	"farwheel.configuration.enabled": "Enabled"
+	"farwheel.configuration.enabled": "Enabled",
+	"farwheel.configuration.modelMerging": "Model Merging"
 }

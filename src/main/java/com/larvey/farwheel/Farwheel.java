@@ -19,7 +19,7 @@ public class Farwheel {
 	public Farwheel(IEventBus modBus, ModContainer container) {
 		container.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
 		container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-		modBus.addListener((ModConfigEvent.Reloading event) -> DhApi.Delayed.renderProxy.reloadRenderDataCache());
+		modBus.addListener((ModConfigEvent.Reloading event) -> DhApi.Delayed.renderProxy.clearRenderDataCache());
 		DhApi.events.bind(DhApiBlockStateWrapperCreatedEvent.class, new BlockStateRules());
 		DhApi.events.bind(DhApiBlockModelOverrideEvent.class, new ModelOverride());
 	}

@@ -46,16 +46,16 @@ public class DhQuads {
 		return cellU * 1000 + cellV;
 	}
 
-	public static EDhApiDirection cullSide(float[] x, float[] y, float[] z) {
-		Vector3f normal = new Vector3f(x[2] - x[0], y[2] - y[0], z[2] - z[0]).cross(x[3] - x[1], y[3] - y[1], z[3] - z[1]);
+	public static EDhApiDirection cullSide(Vector3f[] corners) {
+		Vector3f normal = new Vector3f(corners[2]).sub(corners[0]).cross(new Vector3f(corners[3]).sub(corners[1]));
 		for (EDhApiDirection side : EDhApiDirection.values()) {
 			float plane = side.x + side.y + side.z > 0 ? 1 : 0;
 			boolean onSide = normal.dot(side.x, side.y, side.z) > 0;
-			for (int corner = 0; corner < 4; corner++) {
-				onSide &= Math.abs(x[corner] * side.x + y[corner] * side.y + z[corner] * side.z - plane) < 0.001f
-					&& x[corner] > -0.001f && x[corner] < 1.001f
-					&& y[corner] > -0.001f && y[corner] < 1.001f
-					&& z[corner] > -0.001f && z[corner] < 1.001f;
+			for (Vector3f corner : corners) {
+				onSide &= Math.abs(corner.dot(side.x, side.y, side.z) - plane) < 0.001f
+					&& corner.x > -0.001f && corner.x < 1.001f
+					&& corner.y > -0.001f && corner.y < 1.001f
+					&& corner.z > -0.001f && corner.z < 1.001f;
 			}
 			if (onSide) {
 				return side;
@@ -64,7 +64,20 @@ public class DhQuads {
 		return null;
 	}
 
-	public static DhApiModelQuad modelQuad(float[] x, float[] y, float[] z, float[] u, float[] v, TextureAtlasSprite sprite, int color, EDhApiDirection cullSide) {
+	public static DhApiModelQuad modelQuad(Quad quad) {
+		float[] x = new float[4];
+		float[] y = new float[4];
+		float[] z = new float[4];
+		float[] u = new float[4];
+		float[] v = new float[4];
+		for (int corner = 0; corner < 4; corner++) {
+			x[corner] = quad.corners()[corner].x;
+			y[corner] = quad.corners()[corner].y;
+			z[corner] = quad.corners()[corner].z;
+			u[corner] = quad.uvs()[corner].x;
+			v[corner] = quad.uvs()[corner].y;
+		}
+		TextureAtlasSprite sprite = quad.sprite();
 		float minU = Math.min(Math.min(u[0], u[1]), Math.min(u[2], u[3]));
 		float maxU = Math.max(Math.max(u[0], u[1]), Math.max(u[2], u[3]));
 		float minV = Math.min(Math.min(v[0], v[1]), Math.min(v[2], v[3]));
@@ -83,9 +96,9 @@ public class DhQuads {
 				int texelX = Math.clamp((int) (spriteU * sprite.contents().width()), 0, sprite.contents().width() - 1);
 				int texelY = Math.clamp((int) (spriteV * sprite.contents().height()), 0, sprite.contents().height() - 1);
 				int abgr = sprite.contents().getOriginalImage().getPixelRGBA(texelX, texelY);
-				pixels[pixelY * 16 + pixelX] = FastColor.ARGB32.multiply(FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr)), color);
+				pixels[pixelY * 16 + pixelX] = FastColor.ARGB32.multiply(FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr)), quad.color());
 			}
 		}
-		return new DhApiModelQuad(x, y, z, tileU, tileV, pixels, cullSide);
+		return new DhApiModelQuad(x, y, z, tileU, tileV, pixels, quad.cullSide());
 	}
 }
