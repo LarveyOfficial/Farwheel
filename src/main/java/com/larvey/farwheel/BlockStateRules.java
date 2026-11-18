@@ -5,9 +5,11 @@ import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockSt
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
 import dev.engine_room.flywheel.api.visualization.VisualizerRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
@@ -22,9 +24,21 @@ public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
 		if (event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
 			&& blockState.getRenderShape() == RenderShape.INVISIBLE
 			&& !blockState.hasBlockEntity()
-			&& blockState.getFluidState().isEmpty()) {
+			&& blockState.getFluidState().isEmpty()
+			&& !BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).getNamespace().equals("minecraft")
+			&& registersVisuals(BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).getNamespace())) {
 			event.value.setBlockMaterial(EDhApiBlockMaterial.AIR);
 			event.value.setOpacity(0);
 		}
+	}
+
+	private static boolean registersVisuals(String namespace) {
+		for (BlockEntityType<?> type : BuiltInRegistries.BLOCK_ENTITY_TYPE) {
+			if (BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type).getNamespace().equals(namespace)
+				&& VisualizerRegistry.getVisualizer(type) != null) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
