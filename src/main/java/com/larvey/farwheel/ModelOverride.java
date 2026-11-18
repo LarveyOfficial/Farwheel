@@ -1,5 +1,6 @@
 package com.larvey.farwheel;
 
+import com.larvey.farwheel.create.CreateFixes;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiDirection;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockModelOverrideEvent;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
@@ -25,6 +26,8 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -42,14 +45,17 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		}
 		BlockState blockState = (BlockState) event.value.getBlockStateWrapper().getWrappedMcObject();
 		ClientLevel level = Minecraft.getInstance().level;
-		// Speedometer needs a level and pos to get its quads
-		BlockEntity blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(new BlockPos(0, 10000, 0), blockState);
-		if (level == null || blockEntity == null) {
+		if (level == null) {
 			return;
 		}
 		// Speedometer needs a level and pos to get its quads
-		blockEntity.setLevel(level);
-		VisualRecorder recorder = new VisualRecorder(blockEntity);
+		BlockEntity blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(new BlockPos(0, 10000, 0), blockState);
+		if (blockEntity != null) {
+			// Speedometer needs a level and pos to get its quads
+			blockEntity.setLevel(level);
+		}
+		ModelData modelData = blockEntity == null ? ModelData.EMPTY : blockEntity.getModelData();
+		VisualRecorder recorder = new VisualRecorder(blockState, blockEntity);
 
 		List<Quad> quads = new ArrayList<>();
 		if (blockState.getRenderShape() == RenderShape.MODEL) {
@@ -58,7 +64,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			// Quads that aren't on a side
 			sides.add(null);
 			for (Direction side : sides) {
-				for (BakedQuad bakedQuad : blockModel.getQuads(blockState, side, RandomSource.create(), blockEntity.getModelData(), null)) {
+				for (BakedQuad bakedQuad : blockModel.getQuads(blockState, side, RandomSource.create(), modelData, null)) {
 					Vector3f[] corners = new Vector3f[4];
 					Vector2f[] uvs = new Vector2f[4];
 					for (int corner = 0; corner < 4; corner++) {
@@ -74,7 +80,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		}
 
 		// Fallback when the texture isn't in an atlas
-		TextureAtlasSprite particle = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState).getParticleIcon(blockEntity.getModelData());
+		TextureAtlasSprite particle = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState).getParticleIcon(modelData);
 		for (int i = 0; i < recorder.instances.size(); i++) {
 			Matrix4f placement = Placement.matrix(recorder.instances.get(i));
 			if (placement == null) {
@@ -114,6 +120,10 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 					memory.free();
 				}
 			}
+		}
+
+		if (ModList.get().isLoaded("create")) {
+			quads.removeIf(quad -> !CreateFixes.keepsQuad(blockState, quad));
 		}
 
 		List<DhApiModelQuad> modelQuads = new ArrayList<>();

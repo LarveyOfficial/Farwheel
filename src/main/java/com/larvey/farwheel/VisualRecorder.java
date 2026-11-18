@@ -13,6 +13,7 @@ import dev.engine_room.flywheel.api.visualization.VisualizationContext;
 import dev.engine_room.flywheel.api.visualization.VisualizerRegistry;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModList;
 
 import java.util.ArrayList;
@@ -24,7 +25,8 @@ public class VisualRecorder {
 	public final List<Model> models = new ArrayList<>();
 
 	/** Builds the visual and saves every instance and its model */
-	public VisualRecorder(BlockEntity blockEntity) {
+	public VisualRecorder(BlockState blockState, BlockEntity blockEntity) {
+		Vec3i origin = blockEntity == null ? Vec3i.ZERO : blockEntity.getBlockPos();
 		VisualizationContext context = new VisualizationContext() {
 			@Override
 			public InstancerProvider instancerProvider() {
@@ -56,7 +58,7 @@ public class VisualRecorder {
 			// Keeps positions relative to the block
 			@Override
 			public Vec3i renderOrigin() {
-				return blockEntity.getBlockPos();
+				return origin;
 			}
 
 			// Only contraptions use this
@@ -65,17 +67,19 @@ public class VisualRecorder {
 				return null;
 			}
 		};
-		@SuppressWarnings("unchecked")
-		BlockEntityVisualizer<BlockEntity> visualizer = (BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType());
-		if (visualizer != null) {
-			// DH builds on multiple threads, so one visual at a time
-			synchronized (VisualRecorder.class) {
-				visualizer.createVisual(context, blockEntity, 0);
+		if (blockEntity != null) {
+			@SuppressWarnings("unchecked")
+			BlockEntityVisualizer<BlockEntity> visualizer = (BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType());
+			if (visualizer != null) {
+				// DH builds on multiple threads, so one visual at a time
+				synchronized (VisualRecorder.class) {
+					visualizer.createVisual(context, blockEntity, 0);
+				}
 			}
 		}
 		// Keeps Create optional
 		if (ModList.get().isLoaded("create")) {
-			CreateFixes.addParts(context.instancerProvider(), blockEntity.getBlockState());
+			CreateFixes.addParts(context.instancerProvider(), blockState);
 		}
 	}
 }
