@@ -31,6 +31,9 @@ import java.util.List;
 public class ModelOverride extends DhApiBlockModelOverrideEvent {
 	@Override
 	public void onBlockModelOverridden(DhApiEventParam<EventParam> event) {
+		if (!Config.ENABLED.get()) {
+			return;
+		}
 		BlockState blockState = (BlockState) event.value.getBlockStateWrapper().getWrappedMcObject();
 		BlockEntity blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(new BlockPos(0, 10000, 0), blockState);
 		blockEntity.setLevel(Minecraft.getInstance().level);

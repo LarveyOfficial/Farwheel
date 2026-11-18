@@ -15,6 +15,9 @@ import net.minecraft.world.level.block.state.BlockState;
 public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
 	@Override
 	public void blockStateWrapperCreated(DhApiEventParam<EventParam> event) {
+		if (!Config.ENABLED.get()) {
+			return;
+		}
 		if (event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
 			&& blockState.getBlock() instanceof EntityBlock entityBlock
 			&& entityBlock.newBlockEntity(BlockPos.ZERO, blockState) instanceof BlockEntity blockEntity
