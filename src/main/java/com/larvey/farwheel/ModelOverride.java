@@ -1,5 +1,6 @@
 package com.larvey.farwheel;
 
+import com.seibel.distanthorizons.api.enums.rendering.EDhApiDirection;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockModelOverrideEvent;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
 import dev.engine_room.flywheel.api.model.Model;
@@ -32,28 +33,27 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		VisualRecorder recorder = new VisualRecorder(blockEntity);
 
 		event.value.clearQuads();
-		BakedModel blockModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState);
-		List<BakedQuad> bakedQuads = new ArrayList<>();
 		if (blockState.getRenderShape() == RenderShape.MODEL) {
-			bakedQuads.addAll(blockModel.getQuads(blockState, null, RandomSource.create(), blockEntity.getModelData(), null));
-			for (Direction direction : Direction.values()) {
-				bakedQuads.addAll(blockModel.getQuads(blockState, direction, RandomSource.create(), blockEntity.getModelData(), null));
+			BakedModel blockModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState);
+			List<Direction> sides = new ArrayList<>(List.of(Direction.values()));
+			sides.add(null);
+			for (Direction side : sides) {
+				for (BakedQuad bakedQuad : blockModel.getQuads(blockState, side, RandomSource.create(), blockEntity.getModelData(), null)) {
+					float[] x = new float[4];
+					float[] y = new float[4];
+					float[] z = new float[4];
+					float[] u = new float[4];
+					float[] v = new float[4];
+					for (int corner = 0; corner < 4; corner++) {
+						x[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8]);
+						y[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 1]);
+						z[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 2]);
+						u[corner] = bakedQuad.getSprite().getUOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 4]));
+						v[corner] = bakedQuad.getSprite().getVOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 5]));
+					}
+					event.value.addQuad(DhQuads.modelQuad(x, y, z, u, v, bakedQuad.getSprite(), side == null ? DhQuads.cullSide(x, y, z) : EDhApiDirection.valueOf(side.name())));
+				}
 			}
-		}
-		for (BakedQuad bakedQuad : bakedQuads) {
-			float[] x = new float[4];
-			float[] y = new float[4];
-			float[] z = new float[4];
-			float[] u = new float[4];
-			float[] v = new float[4];
-			for (int corner = 0; corner < 4; corner++) {
-				x[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8]);
-				y[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 1]);
-				z[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 2]);
-				u[corner] = bakedQuad.getSprite().getUOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 4]));
-				v[corner] = bakedQuad.getSprite().getVOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 5]));
-			}
-			event.value.addQuad(DhQuads.modelQuad(x, y, z, u, v, bakedQuad.getSprite()));
 		}
 
 		for (int i = 0; i < recorder.instances.size(); i++) {
@@ -84,7 +84,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 						u[corner] = sprite.getUOffset(vertices.u(quad + corner) + uvShift.x);
 						v[corner] = sprite.getVOffset(vertices.v(quad + corner) + uvShift.y);
 					}
-					event.value.addQuad(DhQuads.modelQuad(x, y, z, u, v, sprite));
+					event.value.addQuad(DhQuads.modelQuad(x, y, z, u, v, sprite, DhQuads.cullSide(x, y, z)));
 				}
 				memory.free();
 			}
