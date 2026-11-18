@@ -58,6 +58,8 @@ public class VisualRecorder {
 				return null;
 			}
 		};
-		((BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType())).createVisual(context, blockEntity, 0);
+		synchronized (VisualRecorder.class) {
+			((BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType())).createVisual(context, blockEntity, 0);
+		}
 	}
 }
