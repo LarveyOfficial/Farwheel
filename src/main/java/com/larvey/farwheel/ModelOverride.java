@@ -32,7 +32,9 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Swaps DH's model for the block model plus its Flywheel parts */
 public class ModelOverride extends DhApiBlockModelOverrideEvent {
+	/** Builds the DH model for one block state */
 	@Override
 	public void onBlockModelOverridden(DhApiEventParam<EventParam> event) {
 		if (!Config.ENABLED.get()) {
@@ -40,10 +42,12 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		}
 		BlockState blockState = (BlockState) event.value.getBlockStateWrapper().getWrappedMcObject();
 		ClientLevel level = Minecraft.getInstance().level;
+		// Speedometer needs a level and pos to get its quads
 		BlockEntity blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(new BlockPos(0, 10000, 0), blockState);
 		if (level == null || blockEntity == null) {
 			return;
 		}
+		// Speedometer needs a level and pos to get its quads
 		blockEntity.setLevel(level);
 		VisualRecorder recorder = new VisualRecorder(blockEntity);
 
@@ -51,12 +55,14 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		if (blockState.getRenderShape() == RenderShape.MODEL) {
 			BakedModel blockModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState);
 			List<Direction> sides = new ArrayList<>(List.of(Direction.values()));
+			// Quads that aren't on a side
 			sides.add(null);
 			for (Direction side : sides) {
 				for (BakedQuad bakedQuad : blockModel.getQuads(blockState, side, RandomSource.create(), blockEntity.getModelData(), null)) {
 					Vector3f[] corners = new Vector3f[4];
 					Vector2f[] uvs = new Vector2f[4];
 					for (int corner = 0; corner < 4; corner++) {
+						// Position is at 0, UV at 4
 						int[] vertices = bakedQuad.getVertices();
 						corners[corner] = new Vector3f(Float.intBitsToFloat(vertices[corner * 8]), Float.intBitsToFloat(vertices[corner * 8 + 1]), Float.intBitsToFloat(vertices[corner * 8 + 2]));
 						uvs[corner] = new Vector2f(bakedQuad.getSprite().getUOffset(Float.intBitsToFloat(vertices[corner * 8 + 4])), bakedQuad.getSprite().getVOffset(Float.intBitsToFloat(vertices[corner * 8 + 5])));
@@ -67,6 +73,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			}
 		}
 
+		// Fallback when the texture isn't in an atlas
 		TextureAtlasSprite particle = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState).getParticleIcon(blockEntity.getModelData());
 		for (int i = 0; i < recorder.instances.size(); i++) {
 			Matrix4f placement = Placement.matrix(recorder.instances.get(i));
@@ -76,6 +83,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			Vector2f uvShift = Placement.uvShift(recorder.instances.get(i));
 			int instanceColor = recorder.instances.get(i) instanceof ColoredLitInstance colored ? FastColor.ARGB32.color(255, Byte.toUnsignedInt(colored.red), Byte.toUnsignedInt(colored.green), Byte.toUnsignedInt(colored.blue)) : -1;
 			for (Model.ConfiguredMesh configuredMesh : recorder.models.get(i).meshes()) {
+				// Don't load missing textures
 				AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(configuredMesh.material().texture(), MissingTextureAtlasSprite.getTexture());
 				TextureAtlas atlas = texture instanceof TextureAtlas textureAtlas ? textureAtlas : null;
 				int vertexCount = configuredMesh.mesh().vertexCount();
@@ -86,6 +94,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 					vertices.vertexCount(vertexCount);
 					configuredMesh.mesh().write(vertices);
 					for (int quad = 0; quad < vertexCount; quad += 4) {
+						// Find the sprite from the middle of the quad
 						float centerU = (vertices.u(quad) + vertices.u(quad + 1) + vertices.u(quad + 2) + vertices.u(quad + 3)) / 4 + uvShift.x;
 						float centerV = (vertices.v(quad) + vertices.v(quad + 1) + vertices.v(quad + 2) + vertices.v(quad + 3)) / 4 + uvShift.y;
 						TextureAtlasSprite sprite = atlas == null ? null : DhQuads.findSprite(atlas, centerU, centerV);
@@ -110,12 +119,14 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		for (Quad quad : mergeIfAllowed(blockState, quads)) {
 			modelQuads.add(DhQuads.modelQuad(quad));
 		}
+		// Clear last so DH keeps its model if something breaks
 		event.value.clearQuads();
 		for (DhApiModelQuad modelQuad : modelQuads) {
 			event.value.addQuad(modelQuad);
 		}
 	}
 
+	/** Never merge vanilla blocks */
 	private static List<Quad> mergeIfAllowed(BlockState blockState, List<Quad> quads) {
 		boolean vanillaBlock = BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).getNamespace().equals("minecraft");
 		return vanillaBlock ? quads : QuadMerger.merge(quads, Config.MODEL_MERGING.get());

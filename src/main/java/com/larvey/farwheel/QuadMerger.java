@@ -10,21 +10,28 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Joins quads together to cut the quad count */
 public class QuadMerger {
+	/** Safe only does exact joins, Aggressive repaints textures */
 	public enum Level {
 		ORIGINAL,
 		SAFE,
 		AGGRESSIVE
 	}
 
+	// Don't bother merging models this small
 	private static final int SAFE_MIN_QUADS = 60;
 	private static final int AGGRESSIVE_MIN_QUADS = 15;
+	// In blocks
 	private static final float MAX_PAINTED_SIZE = 4;
 
+	/** Only quads in the same group can join */
 	private record Group(TextureAtlasSprite sprite, int color, EDhApiDirection cullSide, int normalX, int normalY, int normalZ, int distance) {}
 
+	/** An outline corner and its UV */
 	private record Corner(Vector3f position, Vector2f uv) {}
 
+	/** Falls back a level if it ends up under the floor */
 	public static List<Quad> merge(List<Quad> quads, Level level) {
 		int minQuads = level == Level.AGGRESSIVE ? AGGRESSIVE_MIN_QUADS : SAFE_MIN_QUADS;
 		if (level == Level.ORIGINAL || quads.size() <= minQuads) {
@@ -40,6 +47,7 @@ public class QuadMerger {
 		return exact.size() >= minQuads ? exact : quads;
 	}
 
+	/** Merges each group */
 	private static List<Quad> mergeWith(List<Quad> quads, boolean allowPainting) {
 		Map<Group, List<Quad>> groups = new LinkedHashMap<>();
 		for (Quad quad : quads) {
@@ -52,6 +60,7 @@ public class QuadMerger {
 		return merged;
 	}
 
+	/** Rounded so float noise still matches */
 	private static Group groupOf(Quad quad, boolean allowPainting) {
 		Vector3f normal = quad.normal().normalize();
 		float distance = normal.dot(quad.corners()[0]);
@@ -60,6 +69,7 @@ public class QuadMerger {
 		return new Group(sprite, color, quad.cullSide(), Math.round(normal.x * 1000), Math.round(normal.y * 1000), Math.round(normal.z * 1000), Math.round(distance * 1000));
 	}
 
+	/** Keep joining until nothing joins */
 	private static List<Quad> mergeGroup(List<Quad> group, boolean allowPainting) {
 		List<Quad> quads = new ArrayList<>(group);
 		boolean joinedAny = true;
@@ -79,6 +89,7 @@ public class QuadMerger {
 		return quads;
 	}
 
+	/** Null if they can't join */
 	private static Quad join(Quad first, Quad second, boolean allowPainting) {
 		List<Corner> firstCorners = distinctCorners(first);
 		List<Corner> secondCorners = distinctCorners(second);
@@ -86,12 +97,14 @@ public class QuadMerger {
 			return null;
 		}
 		Quad joined = joinAlongEdge(first, firstCorners, second, secondCorners, allowPainting);
+		// Triangles are quads with a repeated corner
 		if (joined == null && firstCorners.size() == 3 && secondCorners.size() == 3) {
 			joined = joinTrianglesAcrossDiagonal(first, firstCorners, second, secondCorners, allowPainting);
 		}
 		return joined;
 	}
 
+	/** Joins two quads that share an edge */
 	private static Quad joinAlongEdge(Quad first, List<Corner> firstCorners, Quad second, List<Corner> secondCorners, boolean allowPainting) {
 		for (int i = 0; i < firstCorners.size(); i++) {
 			Corner start = firstCorners.get(i);
@@ -99,6 +112,7 @@ public class QuadMerger {
 			for (int j = 0; j < secondCorners.size(); j++) {
 				Corner otherStart = secondCorners.get(j);
 				Corner otherEnd = secondCorners.get((j + 1) % secondCorners.size());
+				// Shared edges run opposite ways
 				if (samePosition(otherStart, end) && samePosition(otherEnd, start)) {
 					List<Corner> outline = new ArrayList<>();
 					for (int k = 1; k <= firstCorners.size(); k++) {
@@ -126,6 +140,7 @@ public class QuadMerger {
 		return null;
 	}
 
+	/** Joins two triangles along DH's 0-2 diagonal */
 	private static Quad joinTrianglesAcrossDiagonal(Quad first, List<Corner> firstCorners, Quad second, List<Corner> secondCorners, boolean allowPainting) {
 		for (int i = 0; i < 3; i++) {
 			Corner start = firstCorners.get(i);
@@ -150,10 +165,12 @@ public class QuadMerger {
 		return null;
 	}
 
+	/** Can the join keep the original texture */
 	private static boolean canKeepTexture(Quad first, Quad second, boolean seamless) {
 		return seamless && !first.isPainted() && !second.isPainted() && first.sprite() == second.sprite() && first.color() == second.color();
 	}
 
+	/** Painted join, if it's allowed and small enough */
 	private static Quad paintedIfAllowed(List<Corner> outline, Quad first, Quad second, boolean allowPainting) {
 		if (!allowPainting) {
 			return null;
@@ -164,6 +181,7 @@ public class QuadMerger {
 		return fitsPaintedSize(painted) ? painted : null;
 	}
 
+	/** Corners without the repeat */
 	private static List<Corner> distinctCorners(Quad quad) {
 		List<Corner> corners = new ArrayList<>();
 		for (int corner = 0; corner < 4; corner++) {
@@ -178,6 +196,7 @@ public class QuadMerger {
 		return corners;
 	}
 
+	/** Outline back to a quad */
 	private static Quad toQuad(List<Corner> outline, Quad style, List<Quad> paintedFrom) {
 		Vector3f[] corners = new Vector3f[4];
 		Vector2f[] uvs = new Vector2f[4];
@@ -189,14 +208,17 @@ public class QuadMerger {
 		return new Quad(corners, uvs, style.sprite(), style.color(), style.cullSide(), paintedFrom);
 	}
 
+	/** Same spot */
 	private static boolean samePosition(Corner first, Corner second) {
 		return first.position().distanceSquared(second.position()) < 1e-10f;
 	}
 
+	/** Same UV */
 	private static boolean sameUv(Corner first, Corner second) {
 		return first.uv().distanceSquared(second.uv()) < 1e-10f;
 	}
 
+	/** Drops a corner sitting on a straight edge */
 	private static void removeIfOnStraightEdge(List<Corner> outline, Corner corner) {
 		int index = outline.indexOf(corner);
 		Corner previous = outline.get((index + outline.size() - 1) % outline.size());
@@ -206,6 +228,7 @@ public class QuadMerger {
 		}
 	}
 
+	/** Is the point on the line between from and to */
 	private static boolean isBetween(Vector3f from, Vector3f point, Vector3f to) {
 		Vector3f line = new Vector3f(to).sub(from);
 		Vector3f toPoint = new Vector3f(point).sub(from);
@@ -213,6 +236,7 @@ public class QuadMerger {
 		return along > 0 && along < 1 && new Vector3f(line).mul(along).distance(toPoint) < 0.0001f;
 	}
 
+	/** Dented quads draw wrong in DH */
 	private static boolean isConvex(List<Corner> outline) {
 		if (outline.size() == 3) {
 			return true;
@@ -230,6 +254,7 @@ public class QuadMerger {
 		return true;
 	}
 
+	/** Does one texture mapping cover both */
 	private static boolean textureContinues(Quad joined, Quad part) {
 		Vector3f origin = joined.corners()[0];
 		Vector3f sideA = new Vector3f(joined.corners()[1]).sub(origin);
@@ -251,6 +276,7 @@ public class QuadMerger {
 		return true;
 	}
 
+	/** 16 texels max each way */
 	private static boolean fitsOneTile(Quad quad) {
 		Vector2f min = new Vector2f(quad.uvs()[0]);
 		Vector2f max = new Vector2f(quad.uvs()[0]);
@@ -262,6 +288,7 @@ public class QuadMerger {
 			&& (max.y - min.y) * quad.sprite().contents().height() <= 16.01f;
 	}
 
+	/** Every edge under the painted size cap */
 	private static boolean fitsPaintedSize(Quad quad) {
 		for (int corner = 0; corner < 4; corner++) {
 			if (quad.corners()[corner].distance(quad.corners()[(corner + 1) % 4]) > MAX_PAINTED_SIZE + 0.001f) {

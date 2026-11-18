@@ -16,10 +16,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Fakes a Flywheel context so we can grab a visual's instances */
 public class VisualRecorder {
 	public final List<Instance> instances = new ArrayList<>();
 	public final List<Model> models = new ArrayList<>();
 
+	/** Builds the visual and saves every instance and its model */
 	public VisualRecorder(BlockEntity blockEntity) {
 		VisualizationContext context = new VisualizationContext() {
 			@Override
@@ -30,6 +32,7 @@ public class VisualRecorder {
 						return new Instancer<I>() {
 							@Override
 							public I createInstance() {
+								// Static models never update, so the handle does nothing
 								I instance = type.create(new InstanceHandle() {
 									@Override public void setChanged() {}
 									@Override public void setDeleted() {}
@@ -48,11 +51,13 @@ public class VisualRecorder {
 				};
 			}
 
+			// Keeps positions relative to the block
 			@Override
 			public Vec3i renderOrigin() {
 				return blockEntity.getBlockPos();
 			}
 
+			// Only contraptions use this
 			@Override
 			public VisualEmbedding createEmbedding(Vec3i renderOrigin) {
 				return null;
@@ -63,6 +68,7 @@ public class VisualRecorder {
 		if (visualizer == null) {
 			return;
 		}
+		// DH builds on multiple threads, so one visual at a time
 		synchronized (VisualRecorder.class) {
 			visualizer.createVisual(context, blockEntity, 0);
 		}

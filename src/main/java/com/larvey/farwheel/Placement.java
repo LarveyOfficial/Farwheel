@@ -9,7 +9,9 @@ import net.neoforged.fml.ModList;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
+/** Figures out where each instance goes in the block */
 public class Placement {
+	/** Null for instance types we don't know */
 	public static Matrix4f matrix(Instance instance) {
 		if (instance instanceof OrientedInstance oriented) {
 			return new Matrix4f()
@@ -23,12 +25,14 @@ public class Placement {
 		if (instance instanceof PosedInstance posed) {
 			return posed.pose;
 		}
+		// Keeps Create optional
 		if (ModList.get().isLoaded("create")) {
 			return CreatePlacement.matrix(instance);
 		}
 		return null;
 	}
 
+	/** Texture scroll, only belts use this */
 	public static Vector2f uvShift(Instance instance) {
 		if (ModList.get().isLoaded("create")) {
 			return CreatePlacement.uvShift(instance);

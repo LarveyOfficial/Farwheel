@@ -16,9 +16,11 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 public class Farwheel {
 	public static final String MOD_ID = "farwheel";
 
+	/** Sets up the config and hooks into DH */
 	public Farwheel(IEventBus modBus, ModContainer container) {
 		container.registerConfig(ModConfig.Type.CLIENT, Config.SPEC);
 		container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+		// Tell DH to reload LODs when settings change
 		modBus.addListener((ModConfigEvent.Reloading event) -> DhApi.Delayed.renderProxy.clearRenderDataCache());
 		DhApi.events.bind(DhApiBlockStateWrapperCreatedEvent.class, new BlockStateRules());
 		DhApi.events.bind(DhApiBlockModelOverrideEvent.class, new ModelOverride());

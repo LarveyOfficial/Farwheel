@@ -7,8 +7,11 @@ import dev.engine_room.flywheel.api.instance.Instance;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 
+/** Create's instance types */
 public class CreatePlacement {
+	/** Rotating and scrolling instances */
 	public static Matrix4f matrix(Instance instance) {
+		// Just the rotation, we don't care about spin
 		if (instance instanceof RotatingInstance rotating) {
 			return new Matrix4f()
 				.translate(rotating.x + 0.5f, rotating.y + 0.5f, rotating.z + 0.5f)
@@ -24,6 +27,7 @@ public class CreatePlacement {
 		return null;
 	}
 
+	/** Belt texture scroll */
 	public static Vector2f uvShift(Instance instance) {
 		if (instance instanceof ScrollInstance scroll) {
 			return new Vector2f(scroll.diffU, scroll.diffV);

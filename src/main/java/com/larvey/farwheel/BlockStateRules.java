@@ -13,29 +13,35 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+/** Decides which blocks we take over in DH */
 public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
+	/** DH calls this once per block state */
 	@Override
 	public void blockStateWrapperCreated(DhApiEventParam<EventParam> event) {
 		if (!Config.ENABLED.get()) {
 			return;
 		}
+		// Anything with a Flywheel visual
 		if (event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
 			&& blockState.getBlock() instanceof EntityBlock entityBlock
 			&& entityBlock.newBlockEntity(BlockPos.ZERO, blockState) instanceof BlockEntity blockEntity
 			&& VisualizerRegistry.getVisualizer(blockEntity.getType()) != null) {
 			event.value.setAllowApiModelOverride(true);
 		}
+		// Invisible helper blocks, like the water wheel's structure blocks
 		if (event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
 			&& blockState.getRenderShape() == RenderShape.INVISIBLE
 			&& !blockState.hasBlockEntity()
 			&& blockState.getFluidState().isEmpty()
 			&& !BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).getNamespace().equals("minecraft")
 			&& registersVisuals(BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).getNamespace())) {
+			// Hide them from DH
 			event.value.setBlockMaterial(EDhApiBlockMaterial.AIR);
 			event.value.setOpacity(0);
 		}
 	}
 
+	/** Does this mod use Flywheel at all */
 	private static boolean registersVisuals(String namespace) {
 		for (BlockEntityType<?> type : BuiltInRegistries.BLOCK_ENTITY_TYPE) {
 			ResourceLocation key = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type);
