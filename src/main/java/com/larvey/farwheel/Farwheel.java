@@ -21,12 +21,16 @@ import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.FullVertexView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
+import net.minecraft.util.FastColor;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
@@ -34,7 +38,6 @@ import net.neoforged.fml.common.Mod;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Mod(value = Farwheel.MOD_ID, dist = Dist.CLIENT)
@@ -101,29 +104,33 @@ public class Farwheel {
 				((BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType())).createVisual(context, blockEntity, 0);
 
 				event.value.clearQuads();
-				int[] blockPixels = new int[256];
-				Arrays.fill(blockPixels, 0xFF0000FF);
 				BakedModel blockModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState);
-				List<BakedQuad> bakedQuads = new ArrayList<>(blockModel.getQuads(blockState, null, RandomSource.create(), blockEntity.getModelData(), null));
-				for (Direction direction : Direction.values()) {
-					bakedQuads.addAll(blockModel.getQuads(blockState, direction, RandomSource.create(), blockEntity.getModelData(), null));
+				List<BakedQuad> bakedQuads = new ArrayList<>();
+				if (blockState.getRenderShape() == RenderShape.MODEL) {
+					bakedQuads.addAll(blockModel.getQuads(blockState, null, RandomSource.create(), blockEntity.getModelData(), null));
+					for (Direction direction : Direction.values()) {
+						bakedQuads.addAll(blockModel.getQuads(blockState, direction, RandomSource.create(), blockEntity.getModelData(), null));
+					}
 				}
 				for (BakedQuad bakedQuad : bakedQuads) {
 					float[] x = new float[4];
 					float[] y = new float[4];
 					float[] z = new float[4];
+					float[] u = new float[4];
+					float[] v = new float[4];
 					for (int corner = 0; corner < 4; corner++) {
 						x[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8]);
 						y[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 1]);
 						z[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 2]);
+						u[corner] = bakedQuad.getSprite().getUOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 4]));
+						v[corner] = bakedQuad.getSprite().getVOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 5]));
 					}
-					event.value.addQuad(new DhApiModelQuad(x, y, z, new float[] { 0, 0, 1, 1 }, new float[] { 0, 1, 1, 0 }, blockPixels, null));
+					event.value.addQuad(modelQuad(x, y, z, u, v, bakedQuad.getSprite()));
 				}
 
-				int[] pixels = new int[256];
-				Arrays.fill(pixels, 0xFFFF0000);
 				for (int i = 0; i < instances.size(); i++) {
 					for (Model.ConfiguredMesh configuredMesh : models.get(i).meshes()) {
+						TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(configuredMesh.material().texture());
 						int vertexCount = configuredMesh.mesh().vertexCount();
 						MemoryBlock memory = MemoryBlock.malloc(vertexCount * FullVertexView.STRIDE);
 						FullVertexView vertices = new FullVertexView();
@@ -131,9 +138,19 @@ public class Farwheel {
 						vertices.vertexCount(vertexCount);
 						configuredMesh.mesh().write(vertices);
 						for (int quad = 0; quad < vertexCount; quad += 4) {
+							float centerU = (vertices.u(quad) + vertices.u(quad + 1) + vertices.u(quad + 2) + vertices.u(quad + 3)) / 4;
+							float centerV = (vertices.v(quad) + vertices.v(quad + 1) + vertices.v(quad + 2) + vertices.v(quad + 3)) / 4;
+							TextureAtlasSprite sprite = null;
+							for (TextureAtlasSprite atlasSprite : atlas.getTextures().values()) {
+								if (centerU >= atlasSprite.getU0() && centerU <= atlasSprite.getU1() && centerV >= atlasSprite.getV0() && centerV <= atlasSprite.getV1()) {
+									sprite = atlasSprite;
+								}
+							}
 							float[] x = new float[4];
 							float[] y = new float[4];
 							float[] z = new float[4];
+							float[] u = new float[4];
+							float[] v = new float[4];
 							for (int corner = 0; corner < 4; corner++) {
 								Vector3f position = new Vector3f(vertices.x(quad + corner), vertices.y(quad + corner), vertices.z(quad + corner));
 								if (instances.get(i) instanceof OrientedInstance oriented) {
@@ -149,13 +166,37 @@ public class Farwheel {
 								x[corner] = position.x;
 								y[corner] = position.y;
 								z[corner] = position.z;
+								u[corner] = sprite.getUOffset(vertices.u(quad + corner));
+								v[corner] = sprite.getVOffset(vertices.v(quad + corner));
 							}
-							event.value.addQuad(new DhApiModelQuad(x, y, z, new float[] { 0, 0, 1, 1 }, new float[] { 0, 1, 1, 0 }, pixels, null));
+							event.value.addQuad(modelQuad(x, y, z, u, v, sprite));
 						}
 						memory.free();
 					}
 				}
 			}
 		});
+	}
+
+	private static DhApiModelQuad modelQuad(float[] x, float[] y, float[] z, float[] u, float[] v, TextureAtlasSprite sprite) {
+		boolean cropped = sprite.contents().width() > 16 || sprite.contents().height() > 16;
+		int[] pixels = new int[256];
+		for (int pixelX = 0; pixelX < 16; pixelX++) {
+			for (int pixelY = 0; pixelY < 16; pixelY++) {
+				float quadU = (pixelX + 0.5f) / 16;
+				float quadV = (pixelY + 0.5f) / 16;
+				float spriteU = quadU;
+				float spriteV = quadV;
+				if (cropped) {
+					spriteU = (1 - quadU) * (1 - quadV) * u[0] + (1 - quadU) * quadV * u[1] + quadU * quadV * u[2] + quadU * (1 - quadV) * u[3];
+					spriteV = (1 - quadU) * (1 - quadV) * v[0] + (1 - quadU) * quadV * v[1] + quadU * quadV * v[2] + quadU * (1 - quadV) * v[3];
+				}
+				int texelX = Math.clamp((int) (spriteU * sprite.contents().width()), 0, sprite.contents().width() - 1);
+				int texelY = Math.clamp((int) (spriteV * sprite.contents().height()), 0, sprite.contents().height() - 1);
+				int abgr = sprite.contents().getOriginalImage().getPixelRGBA(texelX, texelY);
+				pixels[pixelY * 16 + pixelX] = FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr));
+			}
+		}
+		return new DhApiModelQuad(x, y, z, cropped ? new float[] { 0, 0, 1, 1 } : u, cropped ? new float[] { 0, 1, 1, 0 } : v, pixels, null);
 	}
 }
