@@ -3,6 +3,7 @@ package com.larvey.farwheel;
 import com.larvey.farwheel.create.CreatePlacement;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.lib.instance.OrientedInstance;
+import dev.engine_room.flywheel.lib.instance.PosedInstance;
 import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import net.neoforged.fml.ModList;
 import org.joml.Vector2f;
@@ -17,6 +18,9 @@ public class Placement {
 		}
 		if (instance instanceof TransformedInstance transformed) {
 			position.mulPosition(transformed.pose);
+		}
+		if (instance instanceof PosedInstance posed) {
+			position.mulPosition(posed.pose);
 		}
 		if (ModList.get().isLoaded("create")) {
 			CreatePlacement.place(instance, position);
