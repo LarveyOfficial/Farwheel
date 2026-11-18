@@ -61,6 +61,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			}
 		}
 
+		TextureAtlasSprite particle = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState).getParticleIcon(blockEntity.getModelData());
 		for (int i = 0; i < recorder.instances.size(); i++) {
 			Matrix4f placement = Placement.matrix(recorder.instances.get(i));
 			if (placement == null) {
@@ -69,7 +70,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			Vector2f uvShift = Placement.uvShift(recorder.instances.get(i));
 			int instanceColor = recorder.instances.get(i) instanceof ColoredLitInstance colored ? FastColor.ARGB32.color(255, Byte.toUnsignedInt(colored.red), Byte.toUnsignedInt(colored.green), Byte.toUnsignedInt(colored.blue)) : -1;
 			for (Model.ConfiguredMesh configuredMesh : recorder.models.get(i).meshes()) {
-				TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(configuredMesh.material().texture());
+				TextureAtlas atlas = Minecraft.getInstance().getTextureManager().getTexture(configuredMesh.material().texture(), null) instanceof TextureAtlas textureAtlas ? textureAtlas : null;
 				int vertexCount = configuredMesh.mesh().vertexCount();
 				MemoryBlock memory = MemoryBlock.malloc(vertexCount * FullVertexView.STRIDE);
 				try {
@@ -80,7 +81,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 					for (int quad = 0; quad < vertexCount; quad += 4) {
 						float centerU = (vertices.u(quad) + vertices.u(quad + 1) + vertices.u(quad + 2) + vertices.u(quad + 3)) / 4 + uvShift.x;
 						float centerV = (vertices.v(quad) + vertices.v(quad + 1) + vertices.v(quad + 2) + vertices.v(quad + 3)) / 4 + uvShift.y;
-						TextureAtlasSprite sprite = DhQuads.findSprite(atlas, centerU, centerV);
+						TextureAtlasSprite sprite = atlas == null ? null : DhQuads.findSprite(atlas, centerU, centerV);
 						float[] x = new float[4];
 						float[] y = new float[4];
 						float[] z = new float[4];
@@ -91,11 +92,11 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 							x[corner] = position.x;
 							y[corner] = position.y;
 							z[corner] = position.z;
-							u[corner] = sprite.getUOffset(vertices.u(quad + corner) + uvShift.x);
-							v[corner] = sprite.getVOffset(vertices.v(quad + corner) + uvShift.y);
+							u[corner] = sprite == null ? vertices.u(quad + corner) : sprite.getUOffset(vertices.u(quad + corner) + uvShift.x);
+							v[corner] = sprite == null ? vertices.v(quad + corner) : sprite.getVOffset(vertices.v(quad + corner) + uvShift.y);
 						}
 						int vertexColor = FastColor.ARGB32.color(255, (int) (vertices.r(quad) * 255), (int) (vertices.g(quad) * 255), (int) (vertices.b(quad) * 255));
-						modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, sprite, FastColor.ARGB32.multiply(vertexColor, instanceColor), DhQuads.cullSide(x, y, z)));
+						modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, sprite == null ? particle : sprite, FastColor.ARGB32.multiply(vertexColor, instanceColor), DhQuads.cullSide(x, y, z)));
 					}
 				} finally {
 					memory.free();
