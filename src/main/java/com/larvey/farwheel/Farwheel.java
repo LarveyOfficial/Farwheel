@@ -18,6 +18,7 @@ import dev.engine_room.flywheel.api.visualization.VisualEmbedding;
 import dev.engine_room.flywheel.api.visualization.VisualizationContext;
 import dev.engine_room.flywheel.api.visualization.VisualizerRegistry;
 import dev.engine_room.flywheel.lib.instance.OrientedInstance;
+import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.FullVertexView;
 import net.minecraft.client.Minecraft;
@@ -69,7 +70,8 @@ public class Farwheel {
 			@Override
 			public void onBlockModelOverridden(DhApiEventParam<EventParam> event) {
 				BlockState blockState = (BlockState) event.value.getBlockStateWrapper().getWrappedMcObject();
-				BlockEntity blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(BlockPos.ZERO, blockState);
+				BlockEntity blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(new BlockPos(0, 10000, 0), blockState);
+				blockEntity.setLevel(Minecraft.getInstance().level);
 				List<Instance> instances = new ArrayList<>();
 				List<Model> models = new ArrayList<>();
 				VisualizationContext context = new VisualizationContext() {
@@ -101,7 +103,7 @@ public class Farwheel {
 
 					@Override
 					public Vec3i renderOrigin() {
-						return Vec3i.ZERO;
+						return blockEntity.getBlockPos();
 					}
 
 					@Override
@@ -171,6 +173,9 @@ public class Farwheel {
 										.rotate(rotating.rotation)
 										.add(rotating.x + 0.5f, rotating.y + 0.5f, rotating.z + 0.5f);
 								}
+								if (instances.get(i) instanceof TransformedInstance transformed) {
+									position.mulPosition(transformed.pose);
+								}
 								x[corner] = position.x;
 								y[corner] = position.y;
 								z[corner] = position.z;
@@ -187,24 +192,33 @@ public class Farwheel {
 	}
 
 	private static DhApiModelQuad modelQuad(float[] x, float[] y, float[] z, float[] u, float[] v, TextureAtlasSprite sprite) {
-		boolean cropped = sprite.contents().width() > 16 || sprite.contents().height() > 16;
+		float minU = 0;
+		float maxU = 1;
+		float minV = 0;
+		float maxV = 1;
+		if (sprite.contents().width() > 16 || sprite.contents().height() > 16) {
+			minU = Math.min(Math.min(u[0], u[1]), Math.min(u[2], u[3]));
+			maxU = Math.max(Math.max(u[0], u[1]), Math.max(u[2], u[3]));
+			minV = Math.min(Math.min(v[0], v[1]), Math.min(v[2], v[3]));
+			maxV = Math.max(Math.max(v[0], v[1]), Math.max(v[2], v[3]));
+		}
+		float[] tileU = new float[4];
+		float[] tileV = new float[4];
+		for (int corner = 0; corner < 4; corner++) {
+			tileU[corner] = (u[corner] - minU) / (maxU - minU);
+			tileV[corner] = (v[corner] - minV) / (maxV - minV);
+		}
 		int[] pixels = new int[256];
 		for (int pixelX = 0; pixelX < 16; pixelX++) {
 			for (int pixelY = 0; pixelY < 16; pixelY++) {
-				float quadU = (pixelX + 0.5f) / 16;
-				float quadV = (pixelY + 0.5f) / 16;
-				float spriteU = quadU;
-				float spriteV = quadV;
-				if (cropped) {
-					spriteU = (1 - quadU) * (1 - quadV) * u[0] + (1 - quadU) * quadV * u[1] + quadU * quadV * u[2] + quadU * (1 - quadV) * u[3];
-					spriteV = (1 - quadU) * (1 - quadV) * v[0] + (1 - quadU) * quadV * v[1] + quadU * quadV * v[2] + quadU * (1 - quadV) * v[3];
-				}
+				float spriteU = minU + (pixelX + 0.5f) / 16 * (maxU - minU);
+				float spriteV = minV + (pixelY + 0.5f) / 16 * (maxV - minV);
 				int texelX = Math.clamp((int) (spriteU * sprite.contents().width()), 0, sprite.contents().width() - 1);
 				int texelY = Math.clamp((int) (spriteV * sprite.contents().height()), 0, sprite.contents().height() - 1);
 				int abgr = sprite.contents().getOriginalImage().getPixelRGBA(texelX, texelY);
 				pixels[pixelY * 16 + pixelX] = FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr));
 			}
 		}
-		return new DhApiModelQuad(x, y, z, cropped ? new float[] { 0, 0, 1, 1 } : u, cropped ? new float[] { 0, 1, 1, 0 } : v, pixels, null);
+		return new DhApiModelQuad(x, y, z, tileU, tileV, pixels, null);
 	}
 }
