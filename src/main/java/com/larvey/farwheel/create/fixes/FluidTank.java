@@ -51,7 +51,7 @@ public class FluidTank {
 		int tile = tileIndex(blockState, Direction.getNearest(normal.x, normal.y, normal.z));
 		Vector2f[] uvs = new Vector2f[4];
 		for (int corner = 0; corner < 4; corner++) {
-			uvs[corner] = new Vector2f((tile % 4 + quad.uvs()[corner].x) / 4, (tile / 4 + quad.uvs()[corner].y) / 4);
+			uvs[corner] = new Vector2f((tile % 4 + quad.uvs()[corner].x) / 4, ((float) tile / 4 + quad.uvs()[corner].y) / 4);
 		}
 		return new Quad(quad.corners(), uvs, sheet, quad.color(), quad.cullSide());
 	}

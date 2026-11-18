@@ -11,16 +11,15 @@ import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** Saw blade, Create draws it outside Flywheel */
+/** Saw blade, Create draws it outside Flywheel :( */
 public class SawBlade {
-	/** Adds the still blade, turned like Create's SawRenderer */
 	public static void add(InstancerProvider instancerProvider, BlockState blockState) {
 		boolean horizontal = SawBlock.isHorizontal(blockState);
 		PartialModel model = horizontal ? AllPartialModels.SAW_BLADE_HORIZONTAL_INACTIVE : AllPartialModels.SAW_BLADE_VERTICAL_INACTIVE;
 		Direction facing = blockState.getValue(SawBlock.FACING);
 		TransformedInstance blade = instancerProvider.instancer(InstanceTypes.TRANSFORMED, Models.partial(model)).createInstance();
 		blade.center();
-		// Create's angles, Flywheel's rotateToFace uses different ones
+
 		if (horizontal) {
 			blade.rotateYDegrees(CreateFixes.horizontalAngle(facing));
 		} else {

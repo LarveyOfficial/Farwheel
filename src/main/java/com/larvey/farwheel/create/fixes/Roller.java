@@ -12,7 +12,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /** Roller frame and drum, Create draws them outside Flywheel */
 public class Roller {
-	/** Adds the frame and the drum at rest, placed like Create's RollerRenderer */
 	public static void add(InstancerProvider instancerProvider, BlockState blockState) {
 		Direction facing = blockState.getValue(RollerBlock.FACING);
 		float angle = CreateFixes.horizontalAngle(facing);

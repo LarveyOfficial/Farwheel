@@ -17,18 +17,18 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 
 /** Open Create doors, Create draws them outside the block model */
 public class SlidingDoor {
-	/** Whether this is either half of an open Create door */
+
 	public static boolean isOpen(BlockState blockState) {
 		return blockState.getBlock() instanceof SlidingDoorBlock && blockState.getValue(SlidingDoorBlock.OPEN);
 	}
 
-	/** Whether a quad is part of this half's block */
+
 	public static boolean isInOwnBlock(Quad quad) {
 		float centerY = (quad.corners()[0].y + quad.corners()[2].y) / 2;
 		return centerY > -0.25f && centerY < 1.25f;
 	}
 
-	/** Adds this half of the open door, placed like Create's SlidingDoorRenderer when fully open */
+
 	public static void add(InstancerProvider instancerProvider, BlockState blockState) {
 		Direction facing = blockState.getValue(SlidingDoorBlock.FACING);
 		boolean rightHinge = blockState.getValue(SlidingDoorBlock.HINGE) == DoorHingeSide.RIGHT;
@@ -40,7 +40,7 @@ public class SlidingDoor {
 		}
 	}
 
-	/** Andesite and copper doors fold into two panels */
+
 	private static void addFoldedPanels(InstancerProvider instancerProvider, BlockState blockState, Direction facing, boolean rightHinge, boolean upperHalf) {
 		ResourceLocation door = BuiltInRegistries.BLOCK.getKey(blockState.getBlock());
 		float sign = rightHinge ? -1 : 1;
@@ -65,7 +65,7 @@ public class SlidingDoor {
 		}
 	}
 
-	/** Train, glass and brass doors slide to the side */
+
 	private static void addSlidHalf(InstancerProvider instancerProvider, BlockState blockState, Direction facing, boolean rightHinge, boolean upperHalf) {
 		Direction slide = rightHinge ? facing.getClockWise() : facing.getCounterClockWise();
 		// Flywheel skips invisible blocks
