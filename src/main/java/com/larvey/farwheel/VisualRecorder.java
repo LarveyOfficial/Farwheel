@@ -58,8 +58,13 @@ public class VisualRecorder {
 				return null;
 			}
 		};
+		@SuppressWarnings("unchecked")
+		BlockEntityVisualizer<BlockEntity> visualizer = (BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType());
+		if (visualizer == null) {
+			return;
+		}
 		synchronized (VisualRecorder.class) {
-			((BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType())).createVisual(context, blockEntity, 0);
+			visualizer.createVisual(context, blockEntity, 0);
 		}
 	}
 }

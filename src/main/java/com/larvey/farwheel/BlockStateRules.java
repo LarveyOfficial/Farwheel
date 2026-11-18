@@ -6,6 +6,7 @@ import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhAp
 import dev.engine_room.flywheel.api.visualization.VisualizerRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -37,8 +38,8 @@ public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
 
 	private static boolean registersVisuals(String namespace) {
 		for (BlockEntityType<?> type : BuiltInRegistries.BLOCK_ENTITY_TYPE) {
-			if (BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type).getNamespace().equals(namespace)
-				&& VisualizerRegistry.getVisualizer(type) != null) {
+			ResourceLocation key = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(type);
+			if (key != null && key.getNamespace().equals(namespace) && VisualizerRegistry.getVisualizer(type) != null) {
 				return true;
 			}
 		}

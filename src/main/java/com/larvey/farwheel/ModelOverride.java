@@ -9,7 +9,10 @@ import dev.engine_room.flywheel.lib.instance.ColoredLitInstance;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.FullVertexView;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
@@ -36,8 +39,12 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			return;
 		}
 		BlockState blockState = (BlockState) event.value.getBlockStateWrapper().getWrappedMcObject();
+		ClientLevel level = Minecraft.getInstance().level;
 		BlockEntity blockEntity = ((EntityBlock) blockState.getBlock()).newBlockEntity(new BlockPos(0, 10000, 0), blockState);
-		blockEntity.setLevel(Minecraft.getInstance().level);
+		if (level == null || blockEntity == null) {
+			return;
+		}
+		blockEntity.setLevel(level);
 		VisualRecorder recorder = new VisualRecorder(blockEntity);
 
 		List<Quad> quads = new ArrayList<>();
@@ -69,7 +76,8 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			Vector2f uvShift = Placement.uvShift(recorder.instances.get(i));
 			int instanceColor = recorder.instances.get(i) instanceof ColoredLitInstance colored ? FastColor.ARGB32.color(255, Byte.toUnsignedInt(colored.red), Byte.toUnsignedInt(colored.green), Byte.toUnsignedInt(colored.blue)) : -1;
 			for (Model.ConfiguredMesh configuredMesh : recorder.models.get(i).meshes()) {
-				TextureAtlas atlas = Minecraft.getInstance().getTextureManager().getTexture(configuredMesh.material().texture(), null) instanceof TextureAtlas textureAtlas ? textureAtlas : null;
+				AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(configuredMesh.material().texture(), MissingTextureAtlasSprite.getTexture());
+				TextureAtlas atlas = texture instanceof TextureAtlas textureAtlas ? textureAtlas : null;
 				int vertexCount = configuredMesh.mesh().vertexCount();
 				MemoryBlock memory = MemoryBlock.malloc(vertexCount * FullVertexView.STRIDE);
 				try {
