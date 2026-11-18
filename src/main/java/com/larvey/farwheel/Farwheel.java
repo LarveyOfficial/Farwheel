@@ -7,6 +7,7 @@ import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockSt
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
 import com.seibel.distanthorizons.api.objects.render.DhApiModelQuad;
 import com.simibubi.create.content.kinetics.base.RotatingInstance;
+import com.simibubi.create.content.processing.burner.ScrollInstance;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceHandle;
 import dev.engine_room.flywheel.api.instance.InstanceType;
@@ -139,6 +140,12 @@ public class Farwheel {
 				}
 
 				for (int i = 0; i < instances.size(); i++) {
+					float diffU = 0;
+					float diffV = 0;
+					if (instances.get(i) instanceof ScrollInstance scroll) {
+						diffU = scroll.diffU;
+						diffV = scroll.diffV;
+					}
 					for (Model.ConfiguredMesh configuredMesh : models.get(i).meshes()) {
 						TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(configuredMesh.material().texture());
 						int vertexCount = configuredMesh.mesh().vertexCount();
@@ -148,8 +155,8 @@ public class Farwheel {
 						vertices.vertexCount(vertexCount);
 						configuredMesh.mesh().write(vertices);
 						for (int quad = 0; quad < vertexCount; quad += 4) {
-							float centerU = (vertices.u(quad) + vertices.u(quad + 1) + vertices.u(quad + 2) + vertices.u(quad + 3)) / 4;
-							float centerV = (vertices.v(quad) + vertices.v(quad + 1) + vertices.v(quad + 2) + vertices.v(quad + 3)) / 4;
+							float centerU = (vertices.u(quad) + vertices.u(quad + 1) + vertices.u(quad + 2) + vertices.u(quad + 3)) / 4 + diffU;
+							float centerV = (vertices.v(quad) + vertices.v(quad + 1) + vertices.v(quad + 2) + vertices.v(quad + 3)) / 4 + diffV;
 							TextureAtlasSprite sprite = null;
 							for (TextureAtlasSprite atlasSprite : atlas.getTextures().values()) {
 								if (centerU >= atlasSprite.getU0() && centerU <= atlasSprite.getU1() && centerV >= atlasSprite.getV0() && centerV <= atlasSprite.getV1()) {
@@ -176,11 +183,16 @@ public class Farwheel {
 								if (instances.get(i) instanceof TransformedInstance transformed) {
 									position.mulPosition(transformed.pose);
 								}
+								if (instances.get(i) instanceof ScrollInstance scroll) {
+									position.sub(0.5f, 0.5f, 0.5f)
+										.rotate(scroll.rotation)
+										.add(scroll.x + 0.5f, scroll.y + 0.5f, scroll.z + 0.5f);
+								}
 								x[corner] = position.x;
 								y[corner] = position.y;
 								z[corner] = position.z;
-								u[corner] = sprite.getUOffset(vertices.u(quad + corner));
-								v[corner] = sprite.getVOffset(vertices.v(quad + corner));
+								u[corner] = sprite.getUOffset(vertices.u(quad + corner) + diffU);
+								v[corner] = sprite.getVOffset(vertices.v(quad + corner) + diffV);
 							}
 							event.value.addQuad(modelQuad(x, y, z, u, v, sprite));
 						}
