@@ -125,7 +125,9 @@ public class DhQuads {
 	}
 
 	/** Reads a texel and tints it */
+	@SuppressWarnings("resource")
 	private static int texelColor(TextureAtlasSprite sprite, float u, float v, int color) {
+		// The atlas owns these, never close them
 		int texelX = Math.clamp((int) (u * sprite.contents().width()), 0, sprite.contents().width() - 1);
 		int texelY = Math.clamp((int) (v * sprite.contents().height()), 0, sprite.contents().height() - 1);
 		// MC is ABGR, DH wants ARGB

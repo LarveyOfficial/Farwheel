@@ -84,6 +84,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 			int instanceColor = recorder.instances.get(i) instanceof ColoredLitInstance colored ? FastColor.ARGB32.color(255, Byte.toUnsignedInt(colored.red), Byte.toUnsignedInt(colored.green), Byte.toUnsignedInt(colored.blue)) : -1;
 			for (Model.ConfiguredMesh configuredMesh : recorder.models.get(i).meshes()) {
 				// Don't load missing textures
+				@SuppressWarnings("resource")
 				AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(configuredMesh.material().texture(), MissingTextureAtlasSprite.getTexture());
 				TextureAtlas atlas = texture instanceof TextureAtlas textureAtlas ? textureAtlas : null;
 				int vertexCount = configuredMesh.mesh().vertexCount();

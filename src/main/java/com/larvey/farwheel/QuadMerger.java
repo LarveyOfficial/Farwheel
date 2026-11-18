@@ -277,6 +277,7 @@ public class QuadMerger {
 	}
 
 	/** 16 texels max each way */
+	@SuppressWarnings("resource")
 	private static boolean fitsOneTile(Quad quad) {
 		Vector2f min = new Vector2f(quad.uvs()[0]);
 		Vector2f max = new Vector2f(quad.uvs()[0]);
