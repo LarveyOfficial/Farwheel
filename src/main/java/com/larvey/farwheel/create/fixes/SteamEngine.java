@@ -15,7 +15,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /** Steam engine piston and linkage, Create only draws them when a shaft is attached */
 public class SteamEngine {
-	/** Adds the parts with the crank held still, placed like Create's SteamEngineVisual */
 	public static void add(InstancerProvider instancerProvider, BlockState blockState) {
 		Direction facing = SteamEngineBlock.getFacing(blockState);
 		// The state doesn't say where the shaft is, so guess it runs across the engine
