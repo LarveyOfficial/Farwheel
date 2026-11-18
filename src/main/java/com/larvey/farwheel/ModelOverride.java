@@ -3,6 +3,7 @@ package com.larvey.farwheel;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiDirection;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockModelOverrideEvent;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
+import com.seibel.distanthorizons.api.objects.render.DhApiModelQuad;
 import dev.engine_room.flywheel.api.model.Model;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.FullVertexView;
@@ -32,7 +33,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		blockEntity.setLevel(Minecraft.getInstance().level);
 		VisualRecorder recorder = new VisualRecorder(blockEntity);
 
-		event.value.clearQuads();
+		List<DhApiModelQuad> modelQuads = new ArrayList<>();
 		if (blockState.getRenderShape() == RenderShape.MODEL) {
 			BakedModel blockModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState);
 			List<Direction> sides = new ArrayList<>(List.of(Direction.values()));
@@ -51,7 +52,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 						u[corner] = bakedQuad.getSprite().getUOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 4]));
 						v[corner] = bakedQuad.getSprite().getVOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 5]));
 					}
-					event.value.addQuad(DhQuads.modelQuad(x, y, z, u, v, bakedQuad.getSprite(), side == null ? DhQuads.cullSide(x, y, z) : EDhApiDirection.valueOf(side.name())));
+					modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, bakedQuad.getSprite(), side == null ? DhQuads.cullSide(x, y, z) : EDhApiDirection.valueOf(side.name())));
 				}
 			}
 		}
@@ -62,32 +63,40 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 				TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(configuredMesh.material().texture());
 				int vertexCount = configuredMesh.mesh().vertexCount();
 				MemoryBlock memory = MemoryBlock.malloc(vertexCount * FullVertexView.STRIDE);
-				FullVertexView vertices = new FullVertexView();
-				vertices.ptr(memory.ptr());
-				vertices.vertexCount(vertexCount);
-				configuredMesh.mesh().write(vertices);
-				for (int quad = 0; quad < vertexCount; quad += 4) {
-					float centerU = (vertices.u(quad) + vertices.u(quad + 1) + vertices.u(quad + 2) + vertices.u(quad + 3)) / 4 + uvShift.x;
-					float centerV = (vertices.v(quad) + vertices.v(quad + 1) + vertices.v(quad + 2) + vertices.v(quad + 3)) / 4 + uvShift.y;
-					TextureAtlasSprite sprite = DhQuads.findSprite(atlas, centerU, centerV);
-					float[] x = new float[4];
-					float[] y = new float[4];
-					float[] z = new float[4];
-					float[] u = new float[4];
-					float[] v = new float[4];
-					for (int corner = 0; corner < 4; corner++) {
-						Vector3f position = new Vector3f(vertices.x(quad + corner), vertices.y(quad + corner), vertices.z(quad + corner));
-						Placement.place(recorder.instances.get(i), position);
-						x[corner] = position.x;
-						y[corner] = position.y;
-						z[corner] = position.z;
-						u[corner] = sprite.getUOffset(vertices.u(quad + corner) + uvShift.x);
-						v[corner] = sprite.getVOffset(vertices.v(quad + corner) + uvShift.y);
+				try {
+					FullVertexView vertices = new FullVertexView();
+					vertices.ptr(memory.ptr());
+					vertices.vertexCount(vertexCount);
+					configuredMesh.mesh().write(vertices);
+					for (int quad = 0; quad < vertexCount; quad += 4) {
+						float centerU = (vertices.u(quad) + vertices.u(quad + 1) + vertices.u(quad + 2) + vertices.u(quad + 3)) / 4 + uvShift.x;
+						float centerV = (vertices.v(quad) + vertices.v(quad + 1) + vertices.v(quad + 2) + vertices.v(quad + 3)) / 4 + uvShift.y;
+						TextureAtlasSprite sprite = DhQuads.findSprite(atlas, centerU, centerV);
+						float[] x = new float[4];
+						float[] y = new float[4];
+						float[] z = new float[4];
+						float[] u = new float[4];
+						float[] v = new float[4];
+						for (int corner = 0; corner < 4; corner++) {
+							Vector3f position = new Vector3f(vertices.x(quad + corner), vertices.y(quad + corner), vertices.z(quad + corner));
+							Placement.place(recorder.instances.get(i), position);
+							x[corner] = position.x;
+							y[corner] = position.y;
+							z[corner] = position.z;
+							u[corner] = sprite.getUOffset(vertices.u(quad + corner) + uvShift.x);
+							v[corner] = sprite.getVOffset(vertices.v(quad + corner) + uvShift.y);
+						}
+						modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, sprite, DhQuads.cullSide(x, y, z)));
 					}
-					event.value.addQuad(DhQuads.modelQuad(x, y, z, u, v, sprite, DhQuads.cullSide(x, y, z)));
+				} finally {
+					memory.free();
 				}
-				memory.free();
 			}
+		}
+
+		event.value.clearQuads();
+		for (DhApiModelQuad modelQuad : modelQuads) {
+			event.value.addQuad(modelQuad);
 		}
 	}
 }
