@@ -67,12 +67,11 @@ public class VisualRecorder {
 		};
 		@SuppressWarnings("unchecked")
 		BlockEntityVisualizer<BlockEntity> visualizer = (BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType());
-		if (visualizer == null) {
-			return;
-		}
-		// DH builds on multiple threads, so one visual at a time
-		synchronized (VisualRecorder.class) {
-			visualizer.createVisual(context, blockEntity, 0);
+		if (visualizer != null) {
+			// DH builds on multiple threads, so one visual at a time
+			synchronized (VisualRecorder.class) {
+				visualizer.createVisual(context, blockEntity, 0);
+			}
 		}
 		// Keeps Create optional
 		if (ModList.get().isLoaded("create")) {

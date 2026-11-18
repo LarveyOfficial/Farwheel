@@ -1,5 +1,6 @@
 package com.larvey.farwheel;
 
+import com.larvey.farwheel.create.CreateFixes;
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiBlockMaterial;
 import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockStateWrapperCreatedEvent;
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
@@ -12,6 +13,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.fml.ModList;
 
 /** Decides which blocks we take over in DH */
 public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
@@ -26,6 +28,12 @@ public class BlockStateRules extends DhApiBlockStateWrapperCreatedEvent {
 			&& blockState.getBlock() instanceof EntityBlock entityBlock
 			&& entityBlock.newBlockEntity(BlockPos.ZERO, blockState) instanceof BlockEntity blockEntity
 			&& VisualizerRegistry.getVisualizer(blockEntity.getType()) != null) {
+			event.value.setAllowApiModelOverride(true);
+		}
+		// Create blocks we fix that have no visual
+		if (ModList.get().isLoaded("create")
+			&& event.value.getBlockStateWrapper().getWrappedMcObject() instanceof BlockState blockState
+			&& CreateFixes.takesOver(blockState)) {
 			event.value.setAllowApiModelOverride(true);
 		}
 		// Invisible helper blocks, like the water wheel's structure blocks

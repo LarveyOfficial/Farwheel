@@ -1,5 +1,6 @@
 package com.larvey.farwheel.create.fixes;
 
+import com.larvey.farwheel.create.CreateFixes;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.saw.SawBlock;
 import dev.engine_room.flywheel.api.instance.InstancerProvider;
@@ -21,7 +22,7 @@ public class SawBlade {
 		blade.center();
 		// Create's angles, Flywheel's rotateToFace uses different ones
 		if (horizontal) {
-			blade.rotateYDegrees(facing.getAxis() == Direction.Axis.X ? -facing.toYRot() : facing.toYRot());
+			blade.rotateYDegrees(CreateFixes.horizontalAngle(facing));
 		} else {
 			if (blockState.getValue(SawBlock.AXIS_ALONG_FIRST_COORDINATE)) {
 				blade.rotateYDegrees(90);
