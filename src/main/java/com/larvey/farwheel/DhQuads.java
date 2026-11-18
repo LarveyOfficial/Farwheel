@@ -132,6 +132,10 @@ public class DhQuads {
 		int texelY = Math.clamp((int) (v * sprite.contents().height()), 0, sprite.contents().height() - 1);
 		// MC is ABGR, DH wants ARGB
 		int abgr = sprite.contents().getOriginalImage().getPixelRGBA(texelX, texelY);
+		// MC cuts out nearly clear pixels, DH only cuts out fully clear ones
+		if (FastColor.ABGR32.alpha(abgr) < 26) {
+			return 0;
+		}
 		return FastColor.ARGB32.multiply(FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr)), color);
 	}
 

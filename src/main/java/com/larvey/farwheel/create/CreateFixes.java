@@ -7,6 +7,7 @@ import com.larvey.farwheel.create.fixes.SlidingDoor;
 import com.simibubi.create.content.contraptions.actors.roller.RollerBlock;
 import com.simibubi.create.content.decoration.slidingDoor.SlidingDoorBlock;
 import com.simibubi.create.content.kinetics.saw.SawBlock;
+import com.simibubi.create.content.trains.track.TrackBlock;
 import dev.engine_room.flywheel.api.instance.InstancerProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
@@ -15,7 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class CreateFixes {
 	/** Create blocks we take over even without a visual */
 	public static boolean takesOver(BlockState blockState) {
-		return blockState.getBlock() instanceof RollerBlock || SlidingDoor.isOpen(blockState);
+		return blockState.getBlock() instanceof RollerBlock || blockState.getBlock() instanceof TrackBlock || SlidingDoor.isOpen(blockState);
 	}
 
 	/** Adds the parts Create draws outside Flywheel */
