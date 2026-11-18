@@ -1,5 +1,6 @@
 package com.larvey.farwheel;
 
+import com.larvey.farwheel.create.CreateFixes;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.instance.InstanceHandle;
 import dev.engine_room.flywheel.api.instance.InstanceType;
@@ -12,6 +13,7 @@ import dev.engine_room.flywheel.api.visualization.VisualizationContext;
 import dev.engine_room.flywheel.api.visualization.VisualizerRegistry;
 import net.minecraft.core.Vec3i;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.fml.ModList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +73,10 @@ public class VisualRecorder {
 		// DH builds on multiple threads, so one visual at a time
 		synchronized (VisualRecorder.class) {
 			visualizer.createVisual(context, blockEntity, 0);
+		}
+		// Keeps Create optional
+		if (ModList.get().isLoaded("create")) {
+			CreateFixes.addParts(context.instancerProvider(), blockEntity.getBlockState());
 		}
 	}
 }
