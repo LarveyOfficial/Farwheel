@@ -2,20 +2,48 @@ package com.larvey.farwheel;
 
 import com.seibel.distanthorizons.api.enums.rendering.EDhApiDirection;
 import com.seibel.distanthorizons.api.objects.render.DhApiModelQuad;
+import dev.engine_room.flywheel.lib.util.RendererReloadCache;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.FastColor;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class DhQuads {
+	private static final RendererReloadCache<TextureAtlas, Map<Integer, List<TextureAtlasSprite>>> SPRITE_GRIDS = new RendererReloadCache<>(DhQuads::buildSpriteGrid);
+
 	public static TextureAtlasSprite findSprite(TextureAtlas atlas, float u, float v) {
-		TextureAtlasSprite sprite = null;
-		for (TextureAtlasSprite atlasSprite : atlas.getTextures().values()) {
-			if (u >= atlasSprite.getU0() && u <= atlasSprite.getU1() && v >= atlasSprite.getV0() && v <= atlasSprite.getV1()) {
-				sprite = atlasSprite;
+		List<TextureAtlasSprite> spritesInCell = SPRITE_GRIDS.get(atlas).getOrDefault(cellKey(cell(u), cell(v)), List.of());
+		for (TextureAtlasSprite sprite : spritesInCell) {
+			if (u >= sprite.getU0() && u <= sprite.getU1() && v >= sprite.getV0() && v <= sprite.getV1()) {
+				return sprite;
 			}
 		}
-		return sprite;
+		return null;
+	}
+
+	private static Map<Integer, List<TextureAtlasSprite>> buildSpriteGrid(TextureAtlas atlas) {
+		Map<Integer, List<TextureAtlasSprite>> spriteGrid = new HashMap<>();
+		for (TextureAtlasSprite sprite : atlas.getTextures().values()) {
+			for (int cellU = cell(sprite.getU0()); cellU <= cell(sprite.getU1()); cellU++) {
+				for (int cellV = cell(sprite.getV0()); cellV <= cell(sprite.getV1()); cellV++) {
+					spriteGrid.computeIfAbsent(cellKey(cellU, cellV), key -> new ArrayList<>()).add(sprite);
+				}
+			}
+		}
+		return spriteGrid;
+	}
+
+	private static int cell(float uv) {
+		return (int) (uv * 256);
+	}
+
+	private static int cellKey(int cellU, int cellV) {
+		return cellU * 1000 + cellV;
 	}
 
 	public static EDhApiDirection cullSide(float[] x, float[] y, float[] z) {
