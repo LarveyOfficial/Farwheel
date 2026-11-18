@@ -6,6 +6,7 @@ import dev.engine_room.flywheel.lib.util.RendererReloadCache;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.FastColor;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -14,6 +15,9 @@ import java.util.List;
 import java.util.Map;
 
 public class DhQuads {
+	private record Spot(Quad original, int[] triangle, float[] weights) {}
+
+	private static final int[][] TRIANGLES = {{0, 1, 2}, {2, 3, 0}};
 	private static final RendererReloadCache<TextureAtlas, Map<Integer, List<TextureAtlasSprite>>> SPRITE_GRIDS = new RendererReloadCache<>(DhQuads::buildSpriteGrid);
 
 	public static TextureAtlasSprite findSprite(TextureAtlas atlas, float u, float v) {
@@ -68,12 +72,19 @@ public class DhQuads {
 		float[] x = new float[4];
 		float[] y = new float[4];
 		float[] z = new float[4];
-		float[] u = new float[4];
-		float[] v = new float[4];
 		for (int corner = 0; corner < 4; corner++) {
 			x[corner] = quad.corners()[corner].x;
 			y[corner] = quad.corners()[corner].y;
 			z[corner] = quad.corners()[corner].z;
+		}
+		if (quad.isPainted()) {
+			float[] tileU = {0, 0, 1, 1};
+			float[] tileV = {0, 1, 1, 0};
+			return new DhApiModelQuad(x, y, z, tileU, tileV, paintedPixels(quad), quad.cullSide());
+		}
+		float[] u = new float[4];
+		float[] v = new float[4];
+		for (int corner = 0; corner < 4; corner++) {
 			u[corner] = quad.uvs()[corner].x;
 			v[corner] = quad.uvs()[corner].y;
 		}
@@ -93,12 +104,91 @@ public class DhQuads {
 			for (int pixelY = 0; pixelY < 16; pixelY++) {
 				float spriteU = minU + (pixelX + 0.5f) / 16 * (maxU - minU);
 				float spriteV = minV + (pixelY + 0.5f) / 16 * (maxV - minV);
-				int texelX = Math.clamp((int) (spriteU * sprite.contents().width()), 0, sprite.contents().width() - 1);
-				int texelY = Math.clamp((int) (spriteV * sprite.contents().height()), 0, sprite.contents().height() - 1);
-				int abgr = sprite.contents().getOriginalImage().getPixelRGBA(texelX, texelY);
-				pixels[pixelY * 16 + pixelX] = FastColor.ARGB32.multiply(FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr)), quad.color());
+				pixels[pixelY * 16 + pixelX] = texelColor(sprite, spriteU, spriteV, quad.color());
 			}
 		}
 		return new DhApiModelQuad(x, y, z, tileU, tileV, pixels, quad.cullSide());
+	}
+
+	private static int texelColor(TextureAtlasSprite sprite, float u, float v, int color) {
+		int texelX = Math.clamp((int) (u * sprite.contents().width()), 0, sprite.contents().width() - 1);
+		int texelY = Math.clamp((int) (v * sprite.contents().height()), 0, sprite.contents().height() - 1);
+		int abgr = sprite.contents().getOriginalImage().getPixelRGBA(texelX, texelY);
+		return FastColor.ARGB32.multiply(FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr)), color);
+	}
+
+	private static int[] paintedPixels(Quad quad) {
+		int[] pixels = new int[256];
+		for (int pixelX = 0; pixelX < 16; pixelX++) {
+			for (int pixelY = 0; pixelY < 16; pixelY++) {
+				Vector3f point = pointOnTile(quad.corners(), (pixelX + 0.5f) / 16, (pixelY + 0.5f) / 16);
+				Spot spot = closestSpot(quad.paintedFrom(), point);
+				pixels[pixelY * 16 + pixelX] = spot == null ? 0 : colorAt(spot);
+			}
+		}
+		return pixels;
+	}
+
+	private static Vector3f pointOnTile(Vector3f[] corners, float tileU, float tileV) {
+		if (tileV >= tileU) {
+			return new Vector3f(corners[0])
+				.add(new Vector3f(corners[1]).sub(corners[0]).mul(tileV))
+				.add(new Vector3f(corners[2]).sub(corners[1]).mul(tileU));
+		}
+		return new Vector3f(corners[0])
+			.add(new Vector3f(corners[3]).sub(corners[0]).mul(tileU))
+			.add(new Vector3f(corners[2]).sub(corners[3]).mul(tileV));
+	}
+
+	private static Spot closestSpot(List<Quad> originals, Vector3f point) {
+		Spot closest = null;
+		float furthestInside = -Float.MAX_VALUE;
+		for (Quad original : originals) {
+			for (int[] triangle : TRIANGLES) {
+				float[] weights = weightsAt(original.corners(), triangle, point);
+				if (weights == null) {
+					continue;
+				}
+				float howFarInside = Math.min(weights[0], Math.min(weights[1], weights[2]));
+				if (howFarInside > furthestInside) {
+					furthestInside = howFarInside;
+					closest = new Spot(original, triangle, weights);
+				}
+			}
+		}
+		return closest;
+	}
+
+	private static float[] weightsAt(Vector3f[] corners, int[] triangle, Vector3f point) {
+		Vector3f first = corners[triangle[0]];
+		Vector3f toSecond = new Vector3f(corners[triangle[1]]).sub(first);
+		Vector3f toThird = new Vector3f(corners[triangle[2]]).sub(first);
+		Vector3f normal = new Vector3f(toSecond).cross(toThird);
+		float normalLengthSquared = normal.lengthSquared();
+		if (normalLengthSquared < 1e-14f) {
+			return null;
+		}
+		Vector3f toPoint = new Vector3f(point).sub(first);
+		float secondWeight = new Vector3f(toPoint).cross(toThird).dot(normal) / normalLengthSquared;
+		float thirdWeight = new Vector3f(toSecond).cross(toPoint).dot(normal) / normalLengthSquared;
+		return new float[] {1 - secondWeight - thirdWeight, secondWeight, thirdWeight};
+	}
+
+	private static int colorAt(Spot spot) {
+		float u = 0;
+		float v = 0;
+		float total = 0;
+		for (int i = 0; i < 3; i++) {
+			float weight = Math.max(0, spot.weights()[i]);
+			Vector2f uv = spot.original().uvs()[spot.triangle()[i]];
+			u += weight * uv.x;
+			v += weight * uv.y;
+			total += weight;
+		}
+		if (total > 0) {
+			u /= total;
+			v /= total;
+		}
+		return texelColor(spot.original().sprite(), u, v, spot.original().color());
 	}
 }

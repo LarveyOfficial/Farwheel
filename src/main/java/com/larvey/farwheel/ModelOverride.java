@@ -30,8 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModelOverride extends DhApiBlockModelOverrideEvent {
-	private static final int MERGE_FLOOR = 60;
-
 	@Override
 	public void onBlockModelOverridden(DhApiEventParam<EventParam> event) {
 		if (!Config.ENABLED.get()) {
@@ -112,10 +110,6 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 
 	private static List<Quad> mergeIfAllowed(BlockState blockState, List<Quad> quads) {
 		boolean vanillaBlock = BuiltInRegistries.BLOCK.getKey(blockState.getBlock()).getNamespace().equals("minecraft");
-		if (vanillaBlock || Config.MODEL_MERGING.get() == MergeLevel.ORIGINAL || quads.size() <= MERGE_FLOOR) {
-			return quads;
-		}
-		List<Quad> merged = QuadMerger.merge(quads);
-		return merged.size() < MERGE_FLOOR ? quads : merged;
+		return vanillaBlock ? quads : QuadMerger.merge(quads, Config.MODEL_MERGING.get());
 	}
 }
