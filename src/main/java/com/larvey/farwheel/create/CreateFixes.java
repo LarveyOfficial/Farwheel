@@ -5,10 +5,12 @@ import com.larvey.farwheel.create.fixes.FluidTank;
 import com.larvey.farwheel.create.fixes.Roller;
 import com.larvey.farwheel.create.fixes.SawBlade;
 import com.larvey.farwheel.create.fixes.SlidingDoor;
+import com.larvey.farwheel.create.fixes.SteamEngine;
 import com.simibubi.create.content.contraptions.actors.roller.RollerBlock;
 import com.simibubi.create.content.decoration.slidingDoor.SlidingDoorBlock;
 import com.simibubi.create.content.fluids.tank.FluidTankBlock;
 import com.simibubi.create.content.kinetics.saw.SawBlock;
+import com.simibubi.create.content.kinetics.steamEngine.SteamEngineBlock;
 import com.simibubi.create.content.trains.track.TrackBlock;
 import dev.engine_room.flywheel.api.instance.InstancerProvider;
 import net.minecraft.core.Direction;
@@ -32,6 +34,9 @@ public class CreateFixes {
 		if (blockState.getBlock() instanceof SlidingDoorBlock) {
 			SlidingDoor.add(instancerProvider, blockState);
 		}
+		if (blockState.getBlock() instanceof SteamEngineBlock) {
+			SteamEngine.add(instancerProvider, blockState);
+		}
 	}
 
 	/** Open door halves only keep their own block's part */
@@ -46,6 +51,9 @@ public class CreateFixes {
 
 	/** Create's angle for a horizontal facing */
 	public static float horizontalAngle(Direction facing) {
+		if (facing.getAxis().isVertical()) {
+			return 0;
+		}
 		return facing.getAxis() == Direction.Axis.X ? -facing.toYRot() : facing.toYRot();
 	}
 }

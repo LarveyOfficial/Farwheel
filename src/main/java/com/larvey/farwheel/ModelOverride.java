@@ -82,6 +82,9 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		// Fallback when the texture isn't in an atlas
 		TextureAtlasSprite particle = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState).getParticleIcon(modelData);
 		for (int i = 0; i < recorder.instances.size(); i++) {
+			if (!recorder.instances.get(i).handle().isVisible()) {
+				continue;
+			}
 			Matrix4f placement = Placement.matrix(recorder.instances.get(i));
 			if (placement == null) {
 				continue;

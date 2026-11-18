@@ -36,12 +36,14 @@ public class VisualRecorder {
 						return new Instancer<I>() {
 							@Override
 							public I createInstance() {
-								// Static models never update, so the handle does nothing
+								// Static models never update, so the handle only remembers if it's hidden
 								I instance = type.create(new InstanceHandle() {
+									private boolean visible = true;
+
 									@Override public void setChanged() {}
 									@Override public void setDeleted() {}
-									@Override public void setVisible(boolean visible) {}
-									@Override public boolean isVisible() { return true; }
+									@Override public void setVisible(boolean visible) { this.visible = visible; }
+									@Override public boolean isVisible() { return visible; }
 								});
 								instances.add(instance);
 								models.add(model);
