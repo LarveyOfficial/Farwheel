@@ -36,7 +36,7 @@ public class DhQuads {
 		return null;
 	}
 
-	public static DhApiModelQuad modelQuad(float[] x, float[] y, float[] z, float[] u, float[] v, TextureAtlasSprite sprite, EDhApiDirection cullSide) {
+	public static DhApiModelQuad modelQuad(float[] x, float[] y, float[] z, float[] u, float[] v, TextureAtlasSprite sprite, int color, EDhApiDirection cullSide) {
 		float minU = Math.min(Math.min(u[0], u[1]), Math.min(u[2], u[3]));
 		float maxU = Math.max(Math.max(u[0], u[1]), Math.max(u[2], u[3]));
 		float minV = Math.min(Math.min(v[0], v[1]), Math.min(v[2], v[3]));
@@ -55,7 +55,7 @@ public class DhQuads {
 				int texelX = Math.clamp((int) (spriteU * sprite.contents().width()), 0, sprite.contents().width() - 1);
 				int texelY = Math.clamp((int) (spriteV * sprite.contents().height()), 0, sprite.contents().height() - 1);
 				int abgr = sprite.contents().getOriginalImage().getPixelRGBA(texelX, texelY);
-				pixels[pixelY * 16 + pixelX] = FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr));
+				pixels[pixelY * 16 + pixelX] = FastColor.ARGB32.multiply(FastColor.ARGB32.color(FastColor.ABGR32.alpha(abgr), FastColor.ABGR32.red(abgr), FastColor.ABGR32.green(abgr), FastColor.ABGR32.blue(abgr)), color);
 			}
 		}
 		return new DhApiModelQuad(x, y, z, tileU, tileV, pixels, cullSide);

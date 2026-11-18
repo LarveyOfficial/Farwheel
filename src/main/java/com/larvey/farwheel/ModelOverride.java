@@ -5,6 +5,7 @@ import com.seibel.distanthorizons.api.methods.events.abstractEvents.DhApiBlockMo
 import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhApiEventParam;
 import com.seibel.distanthorizons.api.objects.render.DhApiModelQuad;
 import dev.engine_room.flywheel.api.model.Model;
+import dev.engine_room.flywheel.lib.instance.ColoredLitInstance;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.FullVertexView;
 import net.minecraft.client.Minecraft;
@@ -14,6 +15,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.FastColor;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -53,7 +55,8 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 						u[corner] = bakedQuad.getSprite().getUOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 4]));
 						v[corner] = bakedQuad.getSprite().getVOffset(Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 5]));
 					}
-					modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, bakedQuad.getSprite(), side == null ? DhQuads.cullSide(x, y, z) : EDhApiDirection.valueOf(side.name())));
+					int tint = bakedQuad.isTinted() ? Minecraft.getInstance().getBlockColors().getColor(blockState, null, null, bakedQuad.getTintIndex()) | 0xFF000000 : -1;
+					modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, bakedQuad.getSprite(), tint, side == null ? DhQuads.cullSide(x, y, z) : EDhApiDirection.valueOf(side.name())));
 				}
 			}
 		}
@@ -64,6 +67,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 				continue;
 			}
 			Vector2f uvShift = Placement.uvShift(recorder.instances.get(i));
+			int instanceColor = recorder.instances.get(i) instanceof ColoredLitInstance colored ? FastColor.ARGB32.color(255, Byte.toUnsignedInt(colored.red), Byte.toUnsignedInt(colored.green), Byte.toUnsignedInt(colored.blue)) : -1;
 			for (Model.ConfiguredMesh configuredMesh : recorder.models.get(i).meshes()) {
 				TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(configuredMesh.material().texture());
 				int vertexCount = configuredMesh.mesh().vertexCount();
@@ -90,7 +94,8 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 							u[corner] = sprite.getUOffset(vertices.u(quad + corner) + uvShift.x);
 							v[corner] = sprite.getVOffset(vertices.v(quad + corner) + uvShift.y);
 						}
-						modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, sprite, DhQuads.cullSide(x, y, z)));
+						int vertexColor = FastColor.ARGB32.color(255, (int) (vertices.r(quad) * 255), (int) (vertices.g(quad) * 255), (int) (vertices.b(quad) * 255));
+						modelQuads.add(DhQuads.modelQuad(x, y, z, u, v, sprite, FastColor.ARGB32.multiply(vertexColor, instanceColor), DhQuads.cullSide(x, y, z)));
 					}
 				} finally {
 					memory.free();
