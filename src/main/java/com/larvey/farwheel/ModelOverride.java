@@ -124,6 +124,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 
 		if (ModList.get().isLoaded("create")) {
 			quads.removeIf(quad -> !CreateFixes.keepsQuad(blockState, quad));
+			quads.replaceAll(quad -> CreateFixes.fixQuad(blockState, quad));
 		}
 
 		List<DhApiModelQuad> modelQuads = new ArrayList<>();
