@@ -19,8 +19,13 @@ import dev.engine_room.flywheel.api.visualization.VisualizerRegistry;
 import dev.engine_room.flywheel.lib.instance.OrientedInstance;
 import dev.engine_room.flywheel.lib.memory.MemoryBlock;
 import dev.engine_room.flywheel.lib.vertex.FullVertexView;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -94,6 +99,26 @@ public class Farwheel {
 					}
 				};
 				((BlockEntityVisualizer<BlockEntity>) VisualizerRegistry.getVisualizer(blockEntity.getType())).createVisual(context, blockEntity, 0);
+
+				event.value.clearQuads();
+				int[] blockPixels = new int[256];
+				Arrays.fill(blockPixels, 0xFF0000FF);
+				BakedModel blockModel = Minecraft.getInstance().getBlockRenderer().getBlockModel(blockState);
+				List<BakedQuad> bakedQuads = new ArrayList<>(blockModel.getQuads(blockState, null, RandomSource.create(), blockEntity.getModelData(), null));
+				for (Direction direction : Direction.values()) {
+					bakedQuads.addAll(blockModel.getQuads(blockState, direction, RandomSource.create(), blockEntity.getModelData(), null));
+				}
+				for (BakedQuad bakedQuad : bakedQuads) {
+					float[] x = new float[4];
+					float[] y = new float[4];
+					float[] z = new float[4];
+					for (int corner = 0; corner < 4; corner++) {
+						x[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8]);
+						y[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 1]);
+						z[corner] = Float.intBitsToFloat(bakedQuad.getVertices()[corner * 8 + 2]);
+					}
+					event.value.addQuad(new DhApiModelQuad(x, y, z, new float[] { 0, 0, 1, 1 }, new float[] { 0, 1, 1, 0 }, blockPixels, null));
+				}
 
 				int[] pixels = new int[256];
 				Arrays.fill(pixels, 0xFFFF0000);
