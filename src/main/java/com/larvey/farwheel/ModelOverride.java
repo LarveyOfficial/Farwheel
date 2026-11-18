@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -58,6 +59,10 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 		}
 
 		for (int i = 0; i < recorder.instances.size(); i++) {
+			Matrix4f placement = Placement.matrix(recorder.instances.get(i));
+			if (placement == null) {
+				continue;
+			}
 			Vector2f uvShift = Placement.uvShift(recorder.instances.get(i));
 			for (Model.ConfiguredMesh configuredMesh : recorder.models.get(i).meshes()) {
 				TextureAtlas atlas = Minecraft.getInstance().getModelManager().getAtlas(configuredMesh.material().texture());
@@ -78,8 +83,7 @@ public class ModelOverride extends DhApiBlockModelOverrideEvent {
 						float[] u = new float[4];
 						float[] v = new float[4];
 						for (int corner = 0; corner < 4; corner++) {
-							Vector3f position = new Vector3f(vertices.x(quad + corner), vertices.y(quad + corner), vertices.z(quad + corner));
-							Placement.place(recorder.instances.get(i), position);
+							Vector3f position = new Vector3f(vertices.x(quad + corner), vertices.y(quad + corner), vertices.z(quad + corner)).mulPosition(placement);
 							x[corner] = position.x;
 							y[corner] = position.y;
 							z[corner] = position.z;

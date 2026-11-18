@@ -6,25 +6,27 @@ import dev.engine_room.flywheel.lib.instance.OrientedInstance;
 import dev.engine_room.flywheel.lib.instance.PosedInstance;
 import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import net.neoforged.fml.ModList;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
-import org.joml.Vector3f;
 
 public class Placement {
-	public static void place(Instance instance, Vector3f position) {
+	public static Matrix4f matrix(Instance instance) {
 		if (instance instanceof OrientedInstance oriented) {
-			position.sub(oriented.pivotX, oriented.pivotY, oriented.pivotZ)
+			return new Matrix4f()
+				.translate(oriented.pivotX + oriented.posX, oriented.pivotY + oriented.posY, oriented.pivotZ + oriented.posZ)
 				.rotate(oriented.rotation)
-				.add(oriented.pivotX + oriented.posX, oriented.pivotY + oriented.posY, oriented.pivotZ + oriented.posZ);
+				.translate(-oriented.pivotX, -oriented.pivotY, -oriented.pivotZ);
 		}
 		if (instance instanceof TransformedInstance transformed) {
-			position.mulPosition(transformed.pose);
+			return transformed.pose;
 		}
 		if (instance instanceof PosedInstance posed) {
-			position.mulPosition(posed.pose);
+			return posed.pose;
 		}
 		if (ModList.get().isLoaded("create")) {
-			CreatePlacement.place(instance, position);
+			return CreatePlacement.matrix(instance);
 		}
+		return null;
 	}
 
 	public static Vector2f uvShift(Instance instance) {
