@@ -3,7 +3,11 @@
 
 <h1>Farwheel</h1>
 <h6><a href="https://github.com/Engine-Room/Flywheel">Flywheel</a> → <a href="https://gitlab.com/distant-horizons-team/distant-horizons/">Distant Horizons</a> block model compatibility layer</h6>
-<a href="/LICENSE"><img src="https://img.shields.io/github/license/LarveyOfficial/Farwheel?style=flat&color=900c3f" alt="License"></a>
+<a href="/LICENSE"><img src="https://img.shields.io/github/license/LarveyOfficial/Farwheel" alt="License"></a>
+<a href="https://modrinth.com/mod/farwheel"><img src="https://img.shields.io/modrinth/dt/farwheel?logo=modrinth" alt="Modrinth downloads"></a>
+<a href="https://www.curseforge.com/minecraft/mc-mods/farwheel"><img src="https://img.shields.io/curseforge/dt/1815843?logo=curseforge" alt="Curseforge downloads"></a>
+
+
 <br>
 <br>
 </div>
