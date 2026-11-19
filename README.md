@@ -2,7 +2,7 @@
 <img width="256" height="256" alt="Farwheel_icon" src="https://github.com/user-attachments/assets/0202de40-5951-4824-8e76-83e58df37281" />
 
 <h1>Farwheel</h1>
-<h6>Flywheel → Distant Horizon block model compatibility layer</h6>
+<h6><a href="https://github.com/Engine-Room/Flywheel">Flywheel</a> → <a href="https://gitlab.com/distant-horizons-team/distant-horizons/">Distant Horizons</a> block model compatibility layer</h6>
 <a href="/LICENSE"><img src="https://img.shields.io/github/license/LarveyOfficial/Farwheel?style=flat&color=900c3f" alt="License"></a>
 <br>
 <br>
