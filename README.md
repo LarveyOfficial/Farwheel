@@ -1,5 +1,6 @@
 <div align="center">
-<img width="256" height="256" alt="image" src="https://github.com/user-attachments/assets/63cff17c-a735-41f9-b01e-c095d77720e5" />
+<img width="256" height="256" alt="Farwheel_icon" src="https://github.com/user-attachments/assets/0202de40-5951-4824-8e76-83e58df37281" />
+
 <h1>Farwheel</h1>
 <h6>Flywheel → Distant Horizon block model compatibility layer</h6>
 <a href="/LICENSE"><img src="https://img.shields.io/github/license/LarveyOfficial/Farwheel?style=flat&color=900c3f" alt="License"></a>
