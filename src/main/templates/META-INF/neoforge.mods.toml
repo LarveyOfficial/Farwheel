@@ -6,8 +6,13 @@ license="${mod_license}"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
+logoFile="farwheel.png"
+displayURL="https://modrinth.com/project/farwheel"
+authors="Luis Vervaet (Larvey)"
 description='''
-Shows Flywheel models in Distant Horizons LODs.
+Flywheel → Distant Horizon block model compatibility layer
+
+Source: https://github.com/LarveyOfficial/Farwheel
 '''
 
 [[dependencies."${mod_id}"]]
